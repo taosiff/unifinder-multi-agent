@@ -70,9 +70,26 @@ if __name__ == "__main__":
     print_banner()
     verify_and_guide_api_keys()
 
+    import socket
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
+
+    desired_port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "127.0.0.1")
+
+    def get_free_port(target_host, start_port, max_tries=20):
+        for candidate in range(start_port, start_port + max_tries):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.bind((target_host, candidate))
+                    return candidate
+                except OSError:
+                    continue
+        return start_port
+
+    port = get_free_port(host, desired_port)
+    if port != desired_port:
+        print(f"⚠️  Port {desired_port} was already in use or locked by Windows.")
+        print(f"🔄 Automatically shifted to free port: {port}")
 
     print(f"\n🌐 Starting UniFinder AI on http://{host}:{port}")
     print("👉 Open your browser to explore the Multi-Agent Admissions & PR Matrix!\n")
