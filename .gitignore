@@ -9,6 +9,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Uploads
+uploads/
+
 # Cloned reference repo
 _reference_tripmate/
 

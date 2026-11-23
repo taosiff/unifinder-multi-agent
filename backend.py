@@ -53,20 +53,56 @@ from guardrails import (
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "unifinder_memory.db")
 
 
+GROQ_FALLBACK_MODELS = [
+    "qwen/qwen3.8-27b",
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b"
+]
+
+GEMINI_FALLBACK_MODELS = [
+    "gemini-3.8-flash",
+    "gemini-3.5-flash",
+    "gemini-2.5-flash",
+    "gemini-1.5-flash"
+]
+
+
 def get_llm(api_key_override: Optional[str] = None, provider_override: Optional[str] = None):
+    """
+    Dynamically loads the appropriate free online LLM (Groq or Google Gemini)
+    with model-fallback resilience.
+    """
     google_key = api_key_override if (provider_override == "gemini" and api_key_override) else os.getenv("GOOGLE_API_KEY")
     groq_key = api_key_override if (provider_override == "groq" and api_key_override) else os.getenv("GROQ_API_KEY")
 
-    if provider_override == "groq" and api_key_override:
-        return ChatGroq(model="llama-3.3-70b-versatile", api_key=api_key_override, temperature=0.3)
-    elif provider_override == "gemini" and api_key_override:
-        return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key_override, temperature=0.3)
+    # Priority 1: User explicitly selected Groq or has Groq key
+    if (provider_override == "groq" or not provider_override) and groq_key:
+        for model_name in GROQ_FALLBACK_MODELS:
+            try:
+                llm = ChatGroq(model=model_name, api_key=groq_key, temperature=0.3)
+                return llm
+            except Exception:
+                continue
 
+    # Priority 2: Gemini
     if google_key:
-        return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=google_key, temperature=0.3)
-    elif groq_key:
-        return ChatGroq(model="llama-3.3-70b-versatile", api_key=groq_key, temperature=0.3)
-    
+        for model_name in GEMINI_FALLBACK_MODELS:
+            try:
+                llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.3)
+                return llm
+            except Exception:
+                continue
+
+    # Fallback to Groq if Google was preferred but failed
+    if groq_key:
+        for model_name in GROQ_FALLBACK_MODELS:
+            try:
+                return ChatGroq(model=model_name, api_key=groq_key, temperature=0.3)
+            except Exception:
+                continue
+
     return None
 
 
@@ -333,13 +369,13 @@ STUDENT PROFILE CONSTRAINTS:
 {f"DOCUMENT EVIDENCE (FROM UPLOADED STUDENT TRANSCRIPT/CV VIA CORRECTIVE RAG):\n{crag_grounding}\n" if crag_grounding else ""}
 
 DISCOVERED UNIVERSITIES:
-{json.dumps(unis[:4], indent=2)}
+{json.dumps(unis[:4], indent=2, default=str)}
 
 ADMISSION CHANCE TIERS:
-{json.dumps(eligibility.get('classified_universities', []), indent=2)}
+{json.dumps(eligibility.get('classified_universities', []), indent=2, default=str)}
 
 ACTIVE SCHOLARSHIPS & FUNDING OPPORTUNITIES:
-{json.dumps(opps[:3], indent=2)}
+{json.dumps(opps[:3], indent=2, default=str)}
 
 IMMIGRATION, WORK PERMIT & PR ROADMAP:
 - Destination: {immigration.get('country')}
@@ -349,7 +385,7 @@ IMMIGRATION, WORK PERMIT & PR ROADMAP:
 - Living Expenses & Visa Proof: {immigration.get('financial_proof')}
 
 CITY LIVING COSTS:
-{json.dumps(living, indent=2)}
+{json.dumps(living, indent=2, default=str)}
 
 CAREER & ROI FORECAST:
 - Starting Salary: ${career.get('projected_starting_salary_avg_usd', 75000):,} USD/year

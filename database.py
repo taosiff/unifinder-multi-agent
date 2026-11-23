@@ -365,8 +365,11 @@ def search_universities(
     params = []
 
     if degree_level and degree_level.upper() in ["BSC", "MSC", "PHD"]:
-        query += f" AND degree_levels LIKE {ph}"
-        params.append(f'%"{degree_level.upper()}"%')
+        if is_postgres():
+            query += f" AND degree_levels ILIKE {ph}"
+        else:
+            query += f" AND degree_levels LIKE {ph}"
+        params.append(f'%"{degree_level}"%')
 
     if country and country.strip():
         query += f" AND country ILIKE {ph}" if is_postgres() else f" AND country LIKE {ph}"
@@ -389,6 +392,8 @@ def search_universities(
     results = []
     for row in rows:
         item = dict(row)
+        if "created_at" in item and item["created_at"] is not None:
+            item["created_at"] = str(item["created_at"])
         try:
             if isinstance(item["degree_levels"], str):
                 item["degree_levels"] = json.loads(item["degree_levels"])

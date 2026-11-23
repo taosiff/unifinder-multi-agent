@@ -387,14 +387,24 @@ async def test_key(req: KeyTestRequest):
     try:
         if req.provider == "gemini":
             from langchain_google_genai import ChatGoogleGenerativeAI
-            test_llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=req.api_key)
-            resp = test_llm.invoke("Respond with the single word: OK")
-            return {"success": True, "provider": "Google Gemini", "reply": resp.content.strip()}
+            for m in ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-1.5-flash"]:
+                try:
+                    test_llm = ChatGoogleGenerativeAI(model=m, google_api_key=req.api_key)
+                    resp = test_llm.invoke("Respond with the single word: OK")
+                    return {"success": True, "provider": f"Google Gemini ({m})", "reply": resp.content.strip()}
+                except Exception as inner_e:
+                    continue
+            return {"success": False, "error": "Unable to connect to Google Gemini models with this key."}
         elif req.provider == "groq":
             from langchain_groq import ChatGroq
-            test_llm = ChatGroq(model="llama-3.3-70b-versatile", api_key=req.api_key)
-            resp = test_llm.invoke("Respond with the single word: OK")
-            return {"success": True, "provider": "Groq", "reply": resp.content.strip()}
+            for m in ["qwen/qwen3.8-27b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "openai/gpt-oss-120b"]:
+                try:
+                    test_llm = ChatGroq(model=m, api_key=req.api_key)
+                    resp = test_llm.invoke("Respond with the single word: OK")
+                    return {"success": True, "provider": f"Groq ({m})", "reply": resp.content.strip()}
+                except Exception as inner_e:
+                    continue
+            return {"success": False, "error": "Unable to connect to Groq models with this key."}
         else:
             return {"success": False, "error": "Unknown provider. Choose 'gemini' or 'groq'."}
     except Exception as e:
