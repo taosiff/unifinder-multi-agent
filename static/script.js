@@ -16,6 +16,7 @@ localStorage.setItem("unifinder_session_id", currentSessionId);
 
 // Initialize on DOM load
 document.addEventListener("DOMContentLoaded", () => {
+    checkSystemStatus();
     updateNavKeyStatus();
     checkLangsmithStatus();
     loadThreadsList();
@@ -162,8 +163,12 @@ async function handleFileUpload(files) {
 }
 
 async function loadSessionDocs() {
+    if (!currentSessionId || currentSessionId === "undefined" || currentSessionId === "null") {
+        currentSessionId = `session_${Math.random().toString(36).substring(2, 9)}`;
+        localStorage.setItem("unifinder_session_id", currentSessionId);
+    }
     try {
-        const res = await fetch(`/api/documents/${currentSessionId}`);
+        const res = await fetch(`/api/documents/${encodeURIComponent(currentSessionId)}`);
         const data = await res.json();
         const list = document.getElementById("docsList");
         if (data.success && data.documents && data.documents.length > 0) {
@@ -976,6 +981,25 @@ async function checkLangsmithStatus() {
         }
     } catch (e) {
         console.error("Langsmith status error:", e);
+    }
+}
+
+async function checkSystemStatus() {
+    try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
+        const statusText = document.getElementById("statusText");
+        if (statusText) {
+            statusText.textContent = `${data.checkpointer || 'PostgresSaver'} Ready`;
+        }
+        if (!storedApiKey && (data.has_google_key || data.has_groq_key)) {
+            const label = document.getElementById("navKeyLabel");
+            if (label) {
+                label.textContent = data.has_google_key ? "Gemini Key (Active)" : "Groq Key (Active)";
+            }
+        }
+    } catch (e) {
+        console.error("Status check error:", e);
     }
 }
 

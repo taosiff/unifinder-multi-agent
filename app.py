@@ -260,8 +260,11 @@ async def upload_document(
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
 
+@app.get("/api/documents")
 @app.get("/api/documents/{session_id}")
-async def list_documents(session_id: str):
+async def list_documents(session_id: Optional[str] = None):
+    if not session_id:
+        return {"success": True, "documents": []}
     docs = get_session_documents(session_id)
     return {"success": True, "documents": docs}
 
@@ -422,15 +425,19 @@ async def get_langsmith_status():
     }
 
 
+@app.get("/api/status")
 @app.get("/health")
 async def health_check():
+    db_mode = "PostgreSQL" if os.getenv("DATABASE_URL") else "SQLite"
     return {
         "status": "online",
         "service": "UniFinder AI Multi-Agent Higher-Ed Platform",
         "version": "2.5.0",
+        "database": db_mode,
+        "checkpointer": f"{db_mode}Saver",
         "has_google_key": bool(os.getenv("GOOGLE_API_KEY")),
         "has_groq_key": bool(os.getenv("GROQ_API_KEY")),
-        "has_langsmith": bool(os.getenv("LANGCHAIN_API_KEY"))
+        "has_langsmith": bool(os.getenv("LANGCHAIN_API_KEY") or os.getenv("LANGSMITH_API_KEY"))
     }
 
 
