@@ -1,0 +1,19 @@
+# Environment and Keys
+.env
+*.env.local
+
+# Database & Cache
+*.db
+*.sqlite3
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cloned reference repo
+_reference_tripmate/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

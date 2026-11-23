@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniFinder AI — Higher-Ed, PR, Scholarships & C-RAG Matrix</title>
+    
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Custom Navy, Cream & Coral Stylesheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <button class="thread-toggle-btn" onclick="toggleThreadSidebar()" title="Toggle Chat History">
+                    ☰
+                </button>
+                <span class="brand-icon">🎓</span>
+                <div class="brand-text">
+                    <span class="brand-title">UniFinder <span class="coral-text">AI</span></span>
+                    <span class="brand-sub">Multi-Agent Subgraphs • C-RAG • LangSmith</span>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <!-- LangSmith Monitoring Tag -->
+                <div class="langsmith-tag" id="langsmithTag" title="LangSmith Observability">
+                    <span class="ls-icon">🔍</span>
+                    <span id="langsmithLabel">LangSmith Tracing</span>
+                </div>
+
+                <button class="key-btn" onclick="openKeyModal()">
+                    <span class="key-icon">🔑</span>
+                    <span id="navKeyLabel">API Settings</span>
+                </button>
+
+                <div class="status-badge" id="systemStatusBadge">
+                    <span class="pulse-dot"></span>
+                    <span id="statusText">SqliteSaver Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Layout: Sidebar + Main Content -->
+    <div class="layout-container">
+
+        <!-- Collapsible Thread History Sidebar -->
+        <aside class="thread-sidebar" id="threadSidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" onclick="createNewThread()">
+                    <span>➕ New Counseling Session</span>
+                </button>
+            </div>
+
+            <div class="thread-section-label">Past Conversations</div>
+            <div class="threads-list" id="threadsList">
+                <div class="thread-empty">Loading conversations...</div>
+            </div>
+
+            <!-- Uploaded Documents in Current Session -->
+            <div class="thread-section-label" style="margin-top: 1.5rem;">Uploaded Documents (C-RAG)</div>
+            <div class="docs-list" id="docsList">
+                <div class="doc-empty">No documents uploaded yet.</div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="app-wrapper">
+
+            <!-- Hero Banner -->
+            <section class="hero-banner">
+                <div class="hero-tag">
+                    <span class="hero-tag-icon">⚡</span> Autonomous Subgraphs • Persistent Memory • Human-in-the-Loop • C-RAG
+                </div>
+                <h1 class="hero-heading">
+                    Global Higher-Education, <span class="coral-highlight">Live Scholarships</span> & Career Matrix
+                </h1>
+                <p class="hero-desc">
+                    BSc to PhD admissions intelligence: live MastersPortal scraping, document-grounded Corrective RAG (C-RAG), verified proof of funds, permanent residency roadmaps, and real-time starting salary calculations.
+                </p>
+            </section>
+
+            <!-- Navigation Tabs -->
+            <nav class="dashboard-tabs">
+                <button class="tab-btn active" onclick="switchTab('counselor')">
+                    <span class="tab-icon">🌐</span> AI Admissions Counselor
+                </button>
+                <button class="tab-btn" onclick="switchTab('opportunities')">
+                    <span class="tab-icon">🌟</span> Live Scholarships & News
+                </button>
+                <button class="tab-btn" onclick="switchTab('matrix')">
+                    <span class="tab-icon">🏛️</span> University Matrix
+                </button>
+                <button class="tab-btn" onclick="switchTab('pr-visa')">
+                    <span class="tab-icon">🛂</span> PR & Visa Pathways
+                </button>
+                <button class="tab-btn" onclick="switchTab('roi')">
+                    <span class="tab-icon">📈</span> Career & ROI Forecaster
+                </button>
+                <button class="tab-btn" onclick="switchTab('sop')">
+                    <span class="tab-icon">📝</span> SOP Reviewer
+                </button>
+                <button class="tab-btn" onclick="switchTab('shortlist')">
+                    <span class="tab-icon">⭐</span> My Wishlist (<span id="shortlistCount">0</span>)
+                </button>
+            </nav>
+
+            <!-- ==============================================
+                 TAB 1: AI ADMISSIONS COUNSELOR (MAIN WORKFLOW)
+                 ============================================== -->
+            <section id="tab-counselor" class="tab-content active">
+                <div class="counselor-grid">
+                    
+                    <!-- Left Control Panel: Profile & Parameters -->
+                    <div class="sidebar-card">
+                        <div class="card-header-bar">
+                            <h3>Student Profile & Filters</h3>
+                            <span class="coral-pill">Safety Guardrails</span>
+                        </div>
+
+                        <!-- Document Upload (C-RAG) Dropzone -->
+                        <div class="upload-dropzone" id="uploadZone">
+                            <input type="file" id="docFileInput" accept=".pdf,.docx,.txt" onchange="handleFileUpload(this.files)" style="display:none;">
+                            <div class="dropzone-content" onclick="document.getElementById('docFileInput').click()">
+                                <span class="upload-icon">📄</span>
+                                <div class="dropzone-text">
+                                    <strong>Upload Transcript / CV</strong>
+                                    <span>PDF, DOCX, TXT for C-RAG Grounding</span>
+                                </div>
+                            </div>
+                            <div class="upload-feedback hidden" id="uploadFeedback"></div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>Degree Level</label>
+                            <div class="segmented-control">
+                                <button type="button" class="segment-btn" onclick="selectDegree('BSc')">BSc</button>
+                                <button type="button" class="segment-btn active" onclick="selectDegree('MSc')">MSc</button>
+                                <button type="button" class="segment-btn" onclick="selectDegree('PhD')">PhD</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="subjectInput">Subject / Field of Study</label>
+                            <input type="text" id="subjectInput" value="Computer Science" placeholder="e.g. Data Science, Robotics, Finance, Biotechnology">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="countryInput">Target Country (or leave blank for Global)</label>
+                            <select id="countryInput">
+                                <option value="">All Destinations (Global Top)</option>
+                                <option value="Germany">Germany (Low/Zero Tuition, Fast-track PR)</option>
+                                <option value="United States">United States (3-Yr STEM OPT, Highest Salaries)</option>
+                                <option value="Canada">Canada (3-Yr PGWP, Express Entry PR)</option>
+                                <option value="United Kingdom">United Kingdom (2-Yr Graduate Route)</option>
+                                <option value="Australia">Australia (Up to 4-Yr 485 Visa)</option>
+                                <option value="Netherlands">Netherlands (1-Yr Zoekjaar Search Year)</option>
+                                <option value="Sweden">Sweden (1-Yr Job Seeking)</option>
+                                <option value="Singapore">Singapore (Asian Tech Hub)</option>
+                                <option value="France">France (Grande École & Tech Hub)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="gpaInput">Your GPA (out of 4.0)</label>
+                                <input type="number" id="gpaInput" step="0.05" min="2.0" max="4.0" value="3.4">
+                            </div>
+                            <div class="form-group half">
+                                <label for="ieltsInput">IELTS / TOEFL</label>
+                                <input type="number" id="ieltsInput" step="0.5" min="5.0" max="9.0" value="7.0">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="budgetInput">Max Annual Tuition Budget: <strong id="budgetValue">$25,000 USD</strong></label>
+                            <input type="range" id="budgetInput" min="0" max="70000" step="2500" value="25000" oninput="updateBudgetDisplay(this.value)">
+                        </div>
+
+                        <!-- Quick Prompts Chips -->
+                        <div class="quick-chips">
+                            <span class="chips-label">Quick Scenarios:</span>
+                            <button class="chip" onclick="setQuickScenario('MSc', 'Artificial Intelligence', 'Germany', 3.5, 7.0, 10000, 'I want tuition-free MSc AI programs in Germany with strong PR prospects.')">
+                                🇩🇪 Germany Zero-Tuition AI
+                            </button>
+                            <button class="chip" onclick="setQuickScenario('MSc', 'Data Science', 'Canada', 3.4, 7.0, 30000, 'Find MSc Data Science in Canada with 3-year PGWP and PR pathways.')">
+                                🇨🇦 Canada PGWP & PR
+                            </button>
+                            <button class="chip" onclick="setQuickScenario('PhD', 'Computer Science', 'United States', 3.8, 7.5, 5000, 'I want fully-funded PhD Computer Science with RA/TA stipend in USA.')">
+                                🇺🇸 USA Fully-Funded PhD
+                            </button>
+                            <button class="chip" onclick="setQuickScenario('BSc', 'Software Engineering', 'Australia', 3.2, 6.5, 35000, 'Find BSc Software Engineering in Australia with regional PR points bonus.')">
+                                🇦🇺 Australia BSc Engineering
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Main Column: Chat, HITL Alert, Stepper & Dossier Display -->
+                    <div class="main-column">
+                        
+                        <!-- Search Input Box -->
+                        <div class="input-card">
+                            <div class="input-card-title">
+                                <span>💬 UniFinder Autonomous Agent Network</span>
+                                <div class="streaming-toggle-row">
+                                    <label class="switch-label">
+                                        <input type="checkbox" id="streamToggle" checked>
+                                        <span class="switch-text">Live Streaming</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="search-box-row">
+                                <textarea id="userQuery" rows="2" placeholder="e.g. Find me top MSc in Computer Science or Data Science in Germany or Netherlands under $15k/year, analyze admission chances with 3.3 GPA, and explain permanent residency options..."></textarea>
+                                <button class="primary-btn" id="findBtn" onclick="runFinder()">
+                                    <span class="btn-text">🚀 Run Multi-Agent Search</span>
+                                    <span class="btn-spinner hidden"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Human-in-the-Loop (HITL) Alert Banner -->
+                        <div class="hitl-banner hidden" id="hitlBanner">
+                            <div class="hitl-header">
+                                <span class="hitl-icon">⚠️</span>
+                                <div>
+                                    <h4>Human-in-the-Loop Verification Required</h4>
+                                    <p id="hitlReasonText">Admissions counselor checkpoint triggered.</p>
+                                </div>
+                            </div>
+                            <div class="hitl-actions" id="hitlActionButtons">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Live LangGraph Agent Stepper Tracker -->
+                        <div class="agent-stepper hidden" id="agentStepper">
+                            <div class="stepper-title">
+                                <span class="spin-icon">⚙️</span> Subgraph Execution Pipeline:
+                            </div>
+                            <div class="steps-container">
+                                <div class="step-item" id="step-guardrail">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">1. Security Guardrail</span>
+                                </div>
+                                <div class="step-item" id="step-crag">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">2. C-RAG Document Evaluator</span>
+                                </div>
+                                <div class="step-item" id="step-discovery">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">3. MastersPortal Scraper</span>
+                                </div>
+                                <div class="step-item" id="step-opps">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">4. Scholarships & News</span>
+                                </div>
+                                <div class="step-item" id="step-pr">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">5. PR & Living Costs</span>
+                                </div>
+                                <div class="step-item" id="step-synthesis">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">6. Strategic Synthesis</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Error Alert Box -->
+                        <div class="alert-box error hidden" id="errorBox"></div>
+
+                        <!-- Quick Metrics Banner -->
+                        <div class="metrics-banner hidden" id="metricsBanner">
+                            <div class="metric-card">
+                                <div class="metric-num coral-text" id="metricUnisCount">0</div>
+                                <div class="metric-label">Matched Universities</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-num" id="metricPswv">18 Mos</div>
+                                <div class="metric-label">Post-Study Work Visa</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-num" id="metricStartingSalary">$75k+</div>
+                                <div class="metric-label">Avg. Starting Salary</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-num coral-text" id="metricPayback">1.8 Yrs</div>
+                                <div class="metric-label">Tuition Payback (ROI)</div>
+                            </div>
+                        </div>
+
+                        <!-- Dossier Markdown Content Card -->
+                        <div class="dossier-card hidden" id="dossierCard">
+                            <div class="dossier-actions-bar">
+                                <div class="dossier-title-tag">
+                                    <span>📋 Master Admissions Dossier</span>
+                                    <span class="thread-tag" id="threadDisplay"></span>
+                                    <span class="crag-pill hidden" id="cragBadge">C-RAG Grounded</span>
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="action-btn" onclick="copyDossier()">📋 Copy Markdown</button>
+                                    <button class="action-btn" onclick="printDossier()">🖨️ Print / Save PDF</button>
+                                </div>
+                            </div>
+                            <div class="markdown-body" id="dossierContent">
+                                <!-- Rendered Markdown / Stream -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==============================================
+                 TAB 2: LIVE SCHOLARSHIPS & OPPORTUNITIES FEED
+                 ============================================== -->
+            <section id="tab-opportunities" class="tab-content">
+                <div class="tab-intro">
+                    <h2>🌟 Live Global Scholarships & Policy News</h2>
+                    <p>Track ongoing fully funded government scholarships (DAAD, Erasmus, Fulbright, Chevening) and verified visa policy shifts.</p>
+                </div>
+
+                <div class="filter-bar">
+                    <select id="oppCountryFilter" onchange="filterOpportunities()">
+                        <option value="">All Destinations</option>
+                        <option value="Germany">Germany</option>
+                        <option value="European Union">European Union</option>
+                        <option value="United States">United States</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Japan">Japan</option>
+                        <option value="China">China</option>
+                        <option value="France">France</option>
+                        <option value="Italy">Italy</option>
+                    </select>
+
+                    <select id="oppDegreeFilter" onchange="filterOpportunities()">
+                        <option value="">All Degrees</option>
+                        <option value="BSc">Bachelor's (BSc)</option>
+                        <option value="MSc">Master's (MSc)</option>
+                        <option value="PhD">Doctoral (PhD)</option>
+                    </select>
+
+                    <select id="oppFundingFilter" onchange="filterOpportunities()">
+                        <option value="">All Funding Models</option>
+                        <option value="Fully Funded">Fully Funded</option>
+                        <option value="Need & Merit">Need & Merit Based</option>
+                    </select>
+                </div>
+
+                <!-- Active Scholarships Grid -->
+                <h3 style="margin-bottom: 1rem; color: var(--navy-800);">Active Scholarship Programs</h3>
+                <div class="opps-grid" id="oppsGrid">
+                    <div class="loading-cell">Loading live opportunities...</div>
+                </div>
+
+                <!-- Latest Regulatory News Feed -->
+                <h3 style="margin: 2.5rem 0 1rem; color: var(--navy-800);">📢 Study Visa & Immigration News Bulletins</h3>
+                <div class="news-grid" id="newsGrid">
+                    <div class="loading-cell">Loading news updates...</div>
+                </div>
+            </section>
+
+            <!-- ==============================================
+                 TAB 3: UNIVERSITY COMPARISON MATRIX
+                 ============================================== -->
+            <section id="tab-matrix" class="tab-content">
+                <div class="tab-intro">
+                    <h2>🏛️ Curated Global University Comparison Matrix</h2>
+                    <p>Filter, compare tuition costs, acceptance rates, and post-study work permits across top research institutions.</p>
+                </div>
+
+                <div class="filter-bar">
+                    <input type="text" id="matrixSearch" placeholder="Filter by university name or subject..." oninput="filterMatrixTable()">
+                    <select id="matrixCountryFilter" onchange="filterMatrixTable()">
+                        <option value="">All Countries</option>
+                        <option value="Germany">Germany</option>
+                        <option value="United States">United States</option>
+                        <option value="Canada">Canada</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Netherlands">Netherlands</option>
+                        <option value="Sweden">Sweden</option>
+                        <option value="Switzerland">Switzerland</option>
+                        <option value="Singapore">Singapore</option>
+                        <option value="France">France</option>
+                    </select>
+                    <button class="secondary-btn" onclick="loadMatrixTable()">🔄 Refresh Table</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table" id="universityTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>University & Location</th>
+                                <th>Degree Levels</th>
+                                <th>Annual Tuition</th>
+                                <th>Living Cost</th>
+                                <th>Min GPA</th>
+                                <th>PSWV Rights</th>
+                                <th>PR Rating</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="universityTableBody">
+                            <tr><td colspan="9" class="loading-cell">Loading university matrix...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ==============================================
+                 TAB 4: POST-STUDY VISA & PR PATHWAYS
+                 ============================================== -->
+            <section id="tab-pr-visa" class="tab-content">
+                <div class="tab-intro">
+                    <h2>🛂 Permanent Residency (PR) & Post-Study Work Permit Guide</h2>
+                    <p>Comprehensive regulatory rules, minimum salary thresholds, and points requirements across major education destinations.</p>
+                </div>
+
+                <div class="pr-cards-grid">
+                    <div class="pr-card">
+                        <div class="pr-card-header">
+                            <span class="flag">🇩🇪</span>
+                            <div>
+                                <h3>Germany</h3>
+                                <span class="rating-badge high">PR Feasibility: High</span>
+                            </div>
+                        </div>
+                        <ul class="pr-details-list">
+                            <li><strong>Post-Study Visa:</strong> 18 months Jobseeker permit (Aufenthaltserlaubnis)</li>
+                            <li><strong>Work During Study:</strong> 140 full days or 280 half days per year</li>
+                            <li><strong>Fast-Track PR:</strong> EU Blue Card allows PR in just <strong>21 months</strong> (with B1 German) or 27 months (with A1/A2 German)</li>
+                            <li><strong>STEM Salary Minimum:</strong> Reduced threshold ~€41,041/year</li>
+                            <li><strong>Visa Proof of Funds:</strong> Blocked Account (Sperrkonto) with ~€11,904</li>
+                        </ul>
+                    </div>
+
+                    <div class="pr-card">
+                        <div class="pr-card-header">
+                            <span class="flag">🇨🇦</span>
+                            <div>
+                                <h3>Canada</h3>
+                                <span class="rating-badge moderate">PR Feasibility: Moderate</span>
+                            </div>
+                        </div>
+                        <ul class="pr-details-list">
+                            <li><strong>Post-Study Visa:</strong> 3-year PGWP (Master's and PhD graduates qualify regardless of length)</li>
+                            <li><strong>Work During Study:</strong> 24 hours per week off-campus</li>
+                            <li><strong>PR Pathway:</strong> Express Entry (CEC), Provincial Nominee Programs (PNP: Ontario, BC Tech)</li>
+                            <li><strong>Advantage:</strong> Category-based STEM & Healthcare draws have lower CRS cutoffs</li>
+                            <li><strong>Visa Proof of Funds:</strong> $20,635 CAD living funds + 1st year tuition</li>
+                        </ul>
+                    </div>
+
+                    <div class="pr-card">
+                        <div class="pr-card-header">
+                            <span class="flag">🇺🇸</span>
+                            <div>
+                                <h3>United States</h3>
+                                <span class="rating-badge challenging">PR Feasibility: Challenging</span>
+                            </div>
+                        </div>
+                        <ul class="pr-details-list">
+                            <li><strong>Post-Study Visa:</strong> 12 months OPT + <strong>24 months STEM OPT Extension</strong> (36 months total)</li>
+                            <li><strong>Work During Study:</strong> 20 hours/week on-campus; CPT for internships</li>
+                            <li><strong>PR Pathway:</strong> H-1B Specialty Occupation lottery (20,000 master's exemption cap) -> EB-2 / EB-3 Green Card or EB-2 NIW for PhD researchers</li>
+                            <li><strong>Advantage:</strong> Highest post-grad tech & finance compensation in the world ($110k-$160k+)</li>
+                        </ul>
+                    </div>
+
+                    <div class="pr-card">
+                        <div class="pr-card-header">
+                            <span class="flag">🇬🇧</span>
+                            <div>
+                                <h3>United Kingdom</h3>
+                                <span class="rating-badge moderate">PR Feasibility: Moderate</span>
+                            </div>
+                        </div>
+                        <ul class="pr-details-list">
+                            <li><strong>Post-Study Visa:</strong> 2-year Graduate Route Visa (3 years for PhD)</li>
+                            <li><strong>Work During Study:</strong> 20 hours per week during term time</li>
+                            <li><strong>PR Pathway:</strong> Switch to Skilled Worker Visa -> Indefinite Leave to Remain (ILR) after 5 years</li>
+                            <li><strong>Salary Threshold:</strong> Standard £38,700/yr (new entrant discount for students under 26: ~£30,960)</li>
+                            <li><strong>Advantage:</strong> 1-year master's programs reduce opportunity cost and time-to-work</li>
+                        </ul>
+                    </div>
+
+                    <div class="pr-card">
+                        <div class="pr-card-header">
+                            <span class="flag">🇦🇺</span>
+                            <div>
+                                <h3>Australia</h3>
+                                <span class="rating-badge moderate">PR Feasibility: Moderate</span>
+                            </div>
+                        </div>
+                        <ul class="pr-details-list">
+                            <li><strong>Post-Study Visa:</strong> 2 to 4 years Subclass 485 Temporary Graduate Visa</li>
+                            <li><strong>Work During Study:</strong> 48 hours per fortnight</li>
+                            <li><strong>PR Pathway:</strong> General Skilled Migration: Subclass 189, 190, 491</li>
+                            <li><strong>Advantage:</strong> Regional study grants 5 extra PR points and extended work rights</li>
+                        </ul>
+                    </div>
+
+                    <div class="pr-card">
+                        <div class="pr-card-header">
+                            <span class="flag">🇳🇱</span>
+                            <div>
+                                <h3>Netherlands</h3>
+                                <span class="rating-badge high">PR Feasibility: High</span>
+                            </div>
+                        </div>
+                        <ul class="pr-details-list">
+                            <li><strong>Post-Study Visa:</strong> 1-year Orientation Year (Zoekjaar) visa for top graduates</li>
+                            <li><strong>Work During Study:</strong> 16 hours/week with work permit</li>
+                            <li><strong>PR Pathway:</strong> Highly Skilled Migrant (Kennismigrant) permit -> Dutch PR after 5 years</li>
+                            <li><strong>Advantage:</strong> Lowered salary requirement (€2,801/mo) for Zoekjaar alumni, virtually 100% English fluency</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==============================================
+                 TAB 5: CAREER & ROI FORECASTER
+                 ============================================== -->
+            <section id="tab-roi" class="tab-content">
+                <div class="tab-intro">
+                    <h2>📈 Higher Education ROI & Salary Forecaster</h2>
+                    <p>Simulate net total cost of attendance against projected starting salary to compute real-world payback time and 3-year profit.</p>
+                </div>
+
+                <div class="roi-calculator-grid">
+                    <div class="roi-form-card">
+                        <h3>Simulation Parameters</h3>
+                        
+                        <div class="form-group">
+                            <label>Destination Country</label>
+                            <select id="roiCountry" onchange="recalculateROI()">
+                                <option value="United States">United States</option>
+                                <option value="Germany" selected>Germany</option>
+                                <option value="Canada">Canada</option>
+                                <option value="United Kingdom">United Kingdom</option>
+                                <option value="Australia">Australia</option>
+                                <option value="Netherlands">Netherlands</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Major / Discipline</label>
+                            <select id="roiSubject" onchange="recalculateROI()">
+                                <option value="Computer Science" selected>Computer Science / AI</option>
+                                <option value="Data Science">Data Science / Analytics</option>
+                                <option value="Engineering">Mechanical / Electrical Engineering</option>
+                                <option value="Business">Business Administration / MBA</option>
+                                <option value="Finance">Finance / Fintech</option>
+                                <option value="Humanities">Humanities / Social Sciences</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Program Duration (Years)</label>
+                            <select id="roiDuration" onchange="recalculateROI()">
+                                <option value="1.0">1.0 Year (e.g. UK MSc)</option>
+                                <option value="2.0" selected>2.0 Years (Standard MSc)</option>
+                                <option value="4.0">4.0 Years (BSc Degree)</option>
+                                <option value="3.5">3.5 Years (PhD Program)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Annual Tuition Fee ($ USD): <strong id="roiTuitionLabel">$5,000</strong></label>
+                            <input type="range" id="roiTuition" min="0" max="65000" step="1000" value="5000" oninput="recalculateROI()">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Annual Living Expenses ($ USD): <strong id="roiLivingLabel">$14,000</strong></label>
+                            <input type="range" id="roiLiving" min="8000" max="30000" step="1000" value="14000" oninput="recalculateROI()">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Scholarship / Grant Total ($ USD): <strong id="roiScholarshipLabel">$0</strong></label>
+                            <input type="range" id="roiScholarship" min="0" max="50000" step="2500" value="0" oninput="recalculateROI()">
+                        </div>
+                    </div>
+
+                    <div class="roi-results-card">
+                        <div class="roi-results-header">
+                            <h3>Financial Projection Summary</h3>
+                            <span class="rating-badge high" id="roiRatingBadge">Exceptional ROI</span>
+                        </div>
+
+                        <div class="roi-stat-grid">
+                            <div class="roi-stat-box">
+                                <span class="roi-stat-label">Total Out-of-Pocket Cost</span>
+                                <span class="roi-stat-val" id="roiTotalCost">$18,000</span>
+                                <span class="roi-stat-note">Includes tuition & living minus part-time earnings</span>
+                            </div>
+                            <div class="roi-stat-box highlight">
+                                <span class="roi-stat-label">Projected Starting Salary</span>
+                                <span class="roi-stat-val coral-text" id="roiStartingSalary">$68,000 / yr</span>
+                                <span class="roi-stat-note">Based on destination industry benchmarks</span>
+                            </div>
+                            <div class="roi-stat-box">
+                                <span class="roi-stat-label">Estimated Break-Even Time</span>
+                                <span class="roi-stat-val" id="roiPaybackYears">0.9 Years</span>
+                                <span class="roi-stat-note">Time to recover 100% of study investment</span>
+                            </div>
+                            <div class="roi-stat-box highlight">
+                                <span class="roi-stat-label">3-Year Cumulative Net Profit</span>
+                                <span class="roi-stat-val coral-text" id="roiThreeYearProfit">+$47,200</span>
+                                <span class="roi-stat-note">Net savings after living expenses & debt recovery</span>
+                            </div>
+                        </div>
+
+                        <div class="roi-advice-box">
+                            <h4>💡 Counselor's Financial Verdict:</h4>
+                            <p id="roiVerdictText">
+                                With low or zero tuition and high demand in STEM, Germany yields an exceptional payback period under 1 year. The student can comfortably self-sustain through student jobs and clear their investment rapidly.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==============================================
+                 TAB 6: STATEMENT OF PURPOSE (SOP) REVIEWER
+                 ============================================== -->
+            <section id="tab-sop" class="tab-content">
+                <div class="tab-intro">
+                    <h2>📝 Statement of Purpose (SOP) & Essay Critique</h2>
+                    <p>Paste your draft SOP to check admissions impact, word count optimization, cliché detection, and academic hook strength.</p>
+                </div>
+
+                <div class="sop-grid">
+                    <div class="sop-editor-card">
+                        <div class="form-group">
+                            <label for="sopTargetUni">Target University & Program</label>
+                            <input type="text" id="sopTargetUni" placeholder="e.g. Technical University of Munich - MSc Data Engineering">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sopText">Statement of Purpose Draft</label>
+                            <textarea id="sopText" rows="12" placeholder="Paste your Statement of Purpose (SOP) here..."></textarea>
+                        </div>
+
+                        <button class="primary-btn" onclick="reviewSOP()">
+                            <span id="sopBtnText">🔍 Review My SOP</span>
+                            <span id="sopBtnLoader" class="btn-spinner hidden"></span>
+                        </button>
+                    </div>
+
+                    <div class="sop-feedback-card" id="sopFeedbackCard">
+                        <div class="sop-score-box">
+                            <div class="score-circle">
+                                <span class="score-number" id="sopScoreVal">--</span>
+                                <span class="score-sub">/ 100</span>
+                            </div>
+                            <div class="score-meta">
+                                <h3 id="sopRatingHeader">Awaiting Your Draft</h3>
+                                <p id="sopWordCountLabel">Word count: 0 words</p>
+                            </div>
+                        </div>
+
+                        <div class="sop-section">
+                            <h4>✅ Key Strengths</h4>
+                            <ul id="sopStrengthsList" class="sop-list">
+                                <li>Your identified strengths will appear here.</li>
+                            </ul>
+                        </div>
+
+                        <div class="sop-section">
+                            <h4>⚠️ Critiques & Clichés</h4>
+                            <ul id="sopCritiquesList" class="sop-list warning">
+                                <li>Identified weaknesses or cliché phrases will appear here.</li>
+                            </ul>
+                        </div>
+
+                        <div class="sop-section">
+                            <h4>🎯 Actionable Recommendations</h4>
+                            <ul id="sopSuggestionsList" class="sop-list suggestions">
+                                <li>Specific advice on structure and faculty hooks will appear here.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==============================================
+                 TAB 7: USER SHORTLIST / WISHLIST
+                 ============================================== -->
+            <section id="tab-shortlist" class="tab-content">
+                <div class="tab-intro">
+                    <h2>⭐ My Saved University Shortlist</h2>
+                    <p>Track your applications, compare saved options, or export to JSON/Print for counseling reviews.</p>
+                </div>
+
+                <div class="shortlist-actions-bar">
+                    <span id="shortlistTotalLabel">Saved Universities: 0</span>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="exportShortlistJSON()">📥 Export JSON</button>
+                        <button class="action-btn" onclick="printShortlist()">🖨️ Print Application Checklist</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table" id="shortlistTable">
+                        <thead>
+                            <tr>
+                                <th>University Name</th>
+                                <th>Location</th>
+                                <th>Degree Level</th>
+                                <th>Program</th>
+                                <th>Annual Tuition</th>
+                                <th>PR Pathway</th>
+                                <th>Notes</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shortlistTableBody">
+                            <tr><td colspan="8" class="loading-cell">No universities saved to shortlist yet. Search or browse the University Matrix to add items!</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ==============================================
+         API KEY SETUP & INSTRUCTIONS MODAL
+         ============================================== -->
+    <div class="modal-overlay hidden" id="keyModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>🔑 Free Online LLM & LangSmith Setup</h3>
+                <button class="close-btn" onclick="closeKeyModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <p class="modal-intro">
+                    UniFinder AI works with <strong>100% Free Online LLMs</strong>. Generate your key in under 30 seconds (no credit card needed):
+                </p>
+
+                <div class="provider-selector">
+                    <button class="prov-btn active" id="provGeminiBtn" onclick="selectProvider('gemini')">
+                        Google Gemini (Free)
+                    </button>
+                    <button class="prov-btn" id="provGroqBtn" onclick="selectProvider('groq')">
+                        Groq Cloud (Free)
+                    </button>
+                </div>
+
+                <div class="guide-box" id="geminiGuide">
+                    <h4>How to get your free Google Gemini API Key:</h4>
+                    <ol>
+                        <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>.</li>
+                        <li>Sign in with your Google account & click <strong>"Create API Key"</strong>.</li>
+                        <li>Copy and paste the key below.</li>
+                    </ol>
+                </div>
+
+                <div class="guide-box hidden" id="groqGuide">
+                    <h4>How to get your free Groq API Key:</h4>
+                    <ol>
+                        <li>Go to <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Groq Console</a>.</li>
+                        <li>Sign up or log in & click <strong>"Create API Key"</strong>.</li>
+                        <li>Copy and paste below for fast Llama-3.3 70B inference.</li>
+                    </ol>
+                </div>
+
+                <div class="form-group">
+                    <label for="apiKeyInput">Enter Your LLM API Key</label>
+                    <input type="password" id="apiKeyInput" placeholder="Paste your API key here">
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="langsmithKeyInput">LangSmith API Key (Optional for Tracing)</label>
+                    <input type="password" id="langsmithKeyInput" placeholder="lsv2_pt_... from smith.langchain.com">
+                </div>
+
+                <div class="modal-btn-row">
+                    <button class="secondary-btn" onclick="testKeyConnection()">🧪 Test Key</button>
+                    <button class="primary-btn" onclick="saveApiKey()">💾 Save & Connect</button>
+                </div>
+
+                <div class="key-test-result hidden" id="keyTestResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast hidden" id="toast"></div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>🎓 <strong>UniFinder AI</strong> — Advanced Higher Education & Immigration Multi-Agent Intelligence System.</p>
+            <p class="footer-sub">Palette: Luxury Navy (#0B192C), Warm Cream (#FDFBF7) & Vibrant Coral (#FF6B6B). Built with LangGraph, Corrective RAG & FastAPI.</p>
+        </div>
+    </footer>
+
+    <!-- App JavaScript -->
+    <script src="/static/script.js"></script>
+</body>
+</html>

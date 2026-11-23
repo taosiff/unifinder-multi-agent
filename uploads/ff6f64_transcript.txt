@@ -1,0 +1,6 @@
+OFFICIAL ACADEMIC TRANSCRIPT
+Student Name: John Doe
+Major: Computer Science
+Cumulative Grade Point Average (CGPA): 3.75 / 4.00
+Overall IELTS Band: 7.5
+Completed 140 credit hours in Algorithms, Data Structures, Operating Systems, Machine Learning.

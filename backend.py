@@ -1,0 +1,670 @@
+"""
+backend.py - UniFinder AI Multi-Agent Brain with LangGraph Subgraphs,
+Persistent SqliteSaver Memory, Corrective RAG (CRAG), HITL, and Streaming.
+"""
+
+import os
+import json
+import uuid
+import re
+import asyncio
+import sqlite3
+from typing import TypedDict, Annotated, List, Dict, Any, Optional, AsyncGenerator
+import operator
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# LangSmith Tracing configuration (optional, active if user sets keys)
+if os.getenv("LANGCHAIN_API_KEY"):
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_PROJECT"] = os.getenv("LANGCHAIN_PROJECT", "unifinder-ai")
+
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langchain_core.messages import (
+    AnyMessage,
+    HumanMessage,
+    AIMessage,
+    SystemMessage,
+)
+
+# LLM Providers
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
+
+# Internal Tools, Database & RAG
+from database import search_universities
+from tools.mastersportal_tool import scrape_studyportals
+from tools.web_intelligence import search_web_knowledge
+from tools.pr_visa_tool import evaluate_immigration_pathway
+from tools.career_roi_tool import calculate_roi_and_career_outlook
+from tools.rag_engine import retrieve_relevant_chunks, grade_document_relevance
+from tools.opportunities_tool import get_live_opportunities, get_immigration_news
+from tools.living_cost_tool import get_city_living_cost, get_embassy_visa_checklist
+from guardrails import (
+    check_intent_guardrail,
+    evaluate_eligibility_guardrail,
+    check_budget_feasibility,
+    classify_admission_chances,
+    check_human_in_the_loop_trigger
+)
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "unifinder_memory.db")
+
+
+def get_llm(api_key_override: Optional[str] = None, provider_override: Optional[str] = None):
+    google_key = api_key_override if (provider_override == "gemini" and api_key_override) else os.getenv("GOOGLE_API_KEY")
+    groq_key = api_key_override if (provider_override == "groq" and api_key_override) else os.getenv("GROQ_API_KEY")
+
+    if provider_override == "groq" and api_key_override:
+        return ChatGroq(model="llama-3.3-70b-versatile", api_key=api_key_override, temperature=0.3)
+    elif provider_override == "gemini" and api_key_override:
+        return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key_override, temperature=0.3)
+
+    if google_key:
+        return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=google_key, temperature=0.3)
+    elif groq_key:
+        return ChatGroq(model="llama-3.3-70b-versatile", api_key=groq_key, temperature=0.3)
+    
+    return None
+
+
+# ==========================================
+# Comprehensive State Definition
+# ==========================================
+
+class UniFinderState(TypedDict):
+    messages: Annotated[list[AnyMessage], operator.add]
+    user_query: str
+    thread_id: str
+    session_id: str
+    degree_level: str
+    subject: str
+    country_pref: str
+    user_gpa: float
+    user_ielts: float
+    budget_usd: int
+    is_valid_query: bool
+    guardrail_warnings: List[str]
+    # RAG / Document Upload state
+    uploaded_chunks: List[Dict[str, Any]]
+    crag_status: str
+    crag_grounding: str
+    # Discovery Subgraph outputs
+    discovered_universities: List[Dict[str, Any]]
+    portal_scraping_result: Dict[str, Any]
+    # Assessment & Opportunity outputs
+    eligibility_analysis: Dict[str, Any]
+    financial_analysis: Dict[str, Any]
+    immigration_analysis: Dict[str, Any]
+    career_roi_analysis: Dict[str, Any]
+    active_opportunities: List[Dict[str, Any]]
+    living_cost_details: Dict[str, Any]
+    # HITL (Human-in-the-Loop) State
+    hitl_required: bool
+    hitl_reason: str
+    hitl_options: List[str]
+    hitl_approved: bool
+    # Final Output
+    dossier_markdown: str
+    llm_calls: int
+
+
+# ==========================================
+# Subgraph 1: Intent & Safety Guardrail
+# ==========================================
+
+def intent_safety_node(state: UniFinderState):
+    query = state["user_query"]
+    guard = check_intent_guardrail(query)
+
+    degree = state.get("degree_level") or "MSc"
+    subject = state.get("subject") or ""
+    country = state.get("country_pref") or ""
+
+    q_low = query.lower()
+    if "bachelor" in q_low or "bsc" in q_low or "undergrad" in q_low:
+        degree = "BSc"
+    elif "phd" in q_low or "doctorate" in q_low or "doctoral" in q_low:
+        degree = "PhD"
+    elif "master" in q_low or "msc" in q_low or "postgrad" in q_low:
+        degree = "MSc"
+
+    countries = ["germany", "united states", "usa", "uk", "united kingdom", "canada", "australia", "netherlands", "sweden", "switzerland", "singapore", "france"]
+    for c in countries:
+        if c in q_low and not country:
+            country = "United States" if c == "usa" else "United Kingdom" if c == "uk" else c.title()
+            break
+
+    if not subject:
+        for s in ["computer science", "artificial intelligence", "data science", "mechanical engineering", "biotechnology", "business", "finance", "robotics", "medicine"]:
+            if s in q_low:
+                subject = s.title()
+                break
+    if not subject:
+        subject = "Computer Science"
+
+    return {
+        "is_valid_query": guard["is_relevant"],
+        "degree_level": degree,
+        "subject": subject,
+        "country_pref": country,
+        "guardrail_warnings": [guard["message"]] if not guard["is_relevant"] else []
+    }
+
+
+# ==========================================
+# Subgraph 2: Corrective RAG (C-RAG) on Uploaded Docs
+# ==========================================
+
+def crag_retrieval_node(state: UniFinderState):
+    session_id = state.get("session_id", "default_session")
+    query = state["user_query"]
+
+    # 1. Retrieve relevant chunks from user-uploaded transcripts or CV
+    chunks = retrieve_relevant_chunks(session_id, query, top_k=3)
+    # 2. Grade relevance
+    grading = grade_document_relevance(chunks, query)
+
+    grounding_text = ""
+    if grading["status"] == "RELEVANT":
+        grounding_text = "\n\n".join([f"**[Source: {c['doc_name']}, Page {c['page']}]**: {c['text']}" for c in chunks])
+    elif grading["status"] == "PARTIAL_FALLBACK" and chunks:
+        grounding_text = f"**[Partial Document Evidence from {chunks[0]['doc_name']}]**: {chunks[0]['text'][:350]}..."
+
+    return {
+        "uploaded_chunks": chunks,
+        "crag_status": grading["status"],
+        "crag_grounding": grounding_text,
+        "messages": [AIMessage(content=f"C-RAG Evaluator: Retrieved {len(chunks)} document chunks. Status: {grading['status']}")]
+    }
+
+
+# ==========================================
+# Subgraph 3: Discovery & Scraper Subgraph
+# ==========================================
+
+def discovery_subgraph_node(state: UniFinderState):
+    degree = state["degree_level"]
+    subject = state["subject"]
+    country = state["country_pref"]
+    budget = state.get("budget_usd", 0)
+    gpa = state.get("user_gpa", 0.0)
+
+    # Scrape studyportals
+    portal_data = scrape_studyportals(degree_level=degree, subject=subject, country=country)
+
+    # Search curated database
+    db_results = search_universities(
+        degree_level=degree,
+        subject=subject,
+        country=country,
+        max_tuition=budget if budget > 5000 else None,
+        user_gpa=gpa if gpa > 0 else None,
+        limit=6
+    )
+
+    if not db_results and country:
+        db_results = search_universities(degree_level=degree, subject=subject, country=None, limit=6)
+
+    return {
+        "discovered_universities": db_results,
+        "portal_scraping_result": portal_data,
+        "messages": [AIMessage(content=f"Discovery Subgraph: Matched {len(db_results)} institutions.")]
+    }
+
+
+# ==========================================
+# Subgraph 4: Opportunities & Live News Subgraph
+# ==========================================
+
+def opportunities_subgraph_node(state: UniFinderState):
+    country = state.get("country_pref", "")
+    degree = state.get("degree_level", "MSc")
+
+    matched_opportunities = get_live_opportunities(
+        destination=country,
+        degree_level=degree
+    )
+
+    return {
+        "active_opportunities": matched_opportunities[:5],
+        "messages": [AIMessage(content=f"Opportunities Subgraph: Matched {len(matched_opportunities)} active global scholarships.")]
+    }
+
+
+# ==========================================
+# Subgraph 5: Admission, Living Cost & Immigration
+# ==========================================
+
+def assessment_and_visa_node(state: UniFinderState):
+    gpa = state.get("user_gpa", 3.4)
+    ielts = state.get("user_ielts", 6.5)
+    country = state.get("country_pref") or "Germany"
+    degree = state.get("degree_level", "MSc")
+    subject = state.get("subject", "Computer Science")
+    budget = state.get("budget_usd", 25000)
+
+    # 1. Eligibility Check
+    eligibility_report = evaluate_eligibility_guardrail(
+        user_gpa=gpa, user_ielts=ielts, target_country=country, target_degree=degree
+    )
+
+    # 2. Classify admission chances
+    classified = []
+    for uni in state.get("discovered_universities", []):
+        min_gpa = uni.get("min_gpa", 3.0)
+        acceptance = uni.get("acceptance_rate_percent", 30.0)
+        tier = classify_admission_chances(gpa, min_gpa, acceptance)
+        classified.append({
+            "name": uni["name"], "country": uni["country"], "tier": tier,
+            "min_gpa": min_gpa, "acceptance_rate": f"{acceptance}%",
+            "tuition_usd": uni.get("tuition_fee_annual_usd", 0)
+        })
+
+    # 3. Immigration Pathway
+    imm_eval = evaluate_immigration_pathway(country=country, degree_level=degree, major=subject)
+
+    # 4. Living Cost & Checklist
+    first_city = state.get("discovered_universities", [{}])[0].get("city", "Munich") if state.get("discovered_universities") else "Munich"
+    living_cost = get_city_living_cost(first_city)
+
+    # 5. Career & ROI Forecaster
+    unis = state.get("discovered_universities", [])
+    avg_tuition = sum(u.get("tuition_fee_annual_usd", 15000) for u in unis) // (len(unis) or 1)
+    avg_living = sum(u.get("living_cost_annual_usd", 14000) for u in unis) // (len(unis) or 1)
+    roi_metrics = calculate_roi_and_career_outlook(
+        country=country, subject=subject, degree_level=degree,
+        annual_tuition_usd=avg_tuition, annual_living_cost_usd=avg_living,
+        program_duration_years=2.0 if degree == "MSc" else 4.0 if degree == "BSc" else 3.5
+    )
+
+    # 6. HITL Trigger evaluation
+    hitl_check = check_human_in_the_loop_trigger(
+        user_budget_usd=budget, discovered_unis=classified, user_gpa=gpa, country=country
+    )
+
+    return {
+        "eligibility_analysis": {
+            "user_gpa": gpa, "user_ielts": ielts,
+            "hard_hurdles": eligibility_report["hard_hurdles"],
+            "advisory_notes": eligibility_report["advisory_notes"],
+            "classified_universities": classified
+        },
+        "immigration_analysis": imm_eval,
+        "living_cost_details": living_cost,
+        "career_roi_analysis": roi_metrics,
+        "hitl_required": hitl_check["requires_hitl"],
+        "hitl_reason": hitl_check["hitl_reason"],
+        "hitl_options": hitl_check["action_options"]
+    }
+
+
+# ==========================================
+# Subgraph 6: Synthesis Counselor Node
+# ==========================================
+
+def synthesis_counselor_node(state: UniFinderState):
+    llm = get_llm()
+    user_query = state["user_query"]
+    unis = state.get("discovered_universities", [])
+    eligibility = state.get("eligibility_analysis", {})
+    immigration = state.get("immigration_analysis", {})
+    career = state.get("career_roi_analysis", {})
+    opps = state.get("active_opportunities", [])
+    crag_grounding = state.get("crag_grounding", "")
+    living = state.get("living_cost_details", {})
+
+    prompt = f"""
+You are UniFinder AI, the global authority on university admissions, scholarships, post-graduation visas, and career ROI.
+Synthesize the structured analysis below into an authoritative, inspiring, and actionable Executive Higher-Education Dossier.
+
+USER REQUEST:
+"{user_query}"
+
+STUDENT PROFILE CONSTRAINTS:
+- Degree Level: {state.get('degree_level')}
+- Major: {state.get('subject')}
+- Country Preference: {state.get('country_pref') or 'Global Top Options'}
+- Academic GPA: {eligibility.get('user_gpa', 3.4)}/4.0 | IELTS: {eligibility.get('user_ielts', 6.5)}
+- Annual Budget: ${state.get('budget_usd', 25000):,} USD
+
+{f"DOCUMENT EVIDENCE (FROM UPLOADED STUDENT TRANSCRIPT/CV VIA CORRECTIVE RAG):\n{crag_grounding}\n" if crag_grounding else ""}
+
+DISCOVERED UNIVERSITIES:
+{json.dumps(unis[:4], indent=2)}
+
+ADMISSION CHANCE TIERS:
+{json.dumps(eligibility.get('classified_universities', []), indent=2)}
+
+ACTIVE SCHOLARSHIPS & FUNDING OPPORTUNITIES:
+{json.dumps(opps[:3], indent=2)}
+
+IMMIGRATION, WORK PERMIT & PR ROADMAP:
+- Destination: {immigration.get('country')}
+- Post-Study Work Permit (PSWV): {immigration.get('pswv_duration')}
+- PR Pathway: {immigration.get('pr_pathway')} (Timeline: {immigration.get('pr_timeline')})
+- Salary Minimum: {immigration.get('salary_threshold')}
+- Living Expenses & Visa Proof: {immigration.get('financial_proof')}
+
+CITY LIVING COSTS:
+{json.dumps(living, indent=2)}
+
+CAREER & ROI FORECAST:
+- Starting Salary: ${career.get('projected_starting_salary_avg_usd', 75000):,} USD/year
+- Payback Period: {career.get('payback_period_years', 2.0)} Years ({career.get('roi_rating')} ROI)
+- 3-Year Cumulative Net Profit: ${career.get('three_year_net_profit_usd', 25000):,} USD
+
+FORMAT THE RESPONSE BEAUTIFULLY WITH:
+# 🎓 Executive Admissions & Career Dossier
+## 1. Profile Assessment & Strategy Overview {f'(incorporating your uploaded document)' if crag_grounding else ''}
+## 2. Recommended Universities & Program Matches (Include Reach, Target, Safety classifications)
+## 3. Active Scholarship Opportunities & Funding Strategy
+## 4. Post-Study Work Visa (PSWV) & Permanent Residency (PR) Roadmap
+## 5. Job Market Outlook, Top Employers & ROI Forecast
+## 6. Actionable Next Steps & Timeline
+"""
+
+    if llm:
+        try:
+            resp = llm.invoke([
+                SystemMessage(content="You are an expert AI Education and Global Immigration Counselor. Use clean markdown formatting."),
+                HumanMessage(content=prompt)
+            ])
+            dossier = resp.content
+            calls = state.get("llm_calls", 0) + 1
+        except Exception as e:
+            dossier = generate_rule_based_dossier(state, error_msg=str(e))
+            calls = state.get("llm_calls", 0)
+    else:
+        dossier = generate_rule_based_dossier(state)
+        calls = state.get("llm_calls", 0)
+
+    return {
+        "dossier_markdown": dossier,
+        "llm_calls": calls,
+        "messages": [AIMessage(content=dossier)]
+    }
+
+
+def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> str:
+    degree = state.get("degree_level", "MSc")
+    subject = state.get("subject", "Computer Science")
+    country = state.get("country_pref") or "Global Destinations"
+    unis = state.get("discovered_universities", [])
+    eligibility = state.get("eligibility_analysis", {})
+    immigration = state.get("immigration_analysis", {})
+    career = state.get("career_roi_analysis", {})
+    opps = state.get("active_opportunities", [])
+    crag_grounding = state.get("crag_grounding", "")
+
+    api_notice = ""
+    if error_msg:
+        api_notice = f"> ⚠️ **LLM Connection Note**: {error_msg}. Generated using verified local database and intelligence tools.\n\n"
+    elif not os.getenv("GOOGLE_API_KEY") and not os.getenv("GROQ_API_KEY"):
+        api_notice = "> 💡 **Tip**: Add your free Google Gemini or Groq API key in the API Settings modal or `.env` file to enable dynamic AI reasoning.\n\n"
+
+    uni_rows = ""
+    for u in unis:
+        uni_rows += f"- **{u['name']}** ({u['country']}, {u['city']}) | QS Rank: #{u.get('world_ranking', 'N/A')} | Annual Tuition: ${u.get('tuition_fee_annual_usd', 0):,} | Min GPA: {u.get('min_gpa', 3.0)} | [Official Website]({u.get('official_url', '#')})\n"
+
+    opp_rows = ""
+    for o in opps[:3]:
+        opp_rows += f"- 🌟 **{o['title']}** ({o['destination']}) — **{o['funding_type']}** | Deadline: {o['deadline']} | [Learn More]({o['official_url']})\n"
+
+    crag_section = ""
+    if crag_grounding:
+        crag_section = f"### 📄 Uploaded Document Insights (C-RAG):\n{crag_grounding}\n\n---\n"
+
+    return f"""{api_notice}# 🎓 Executive Admissions & Career Dossier: {degree} in {subject}
+
+## 1. Profile Assessment & Strategy Overview
+- **Degree Level**: {degree}
+- **Discipline**: {subject}
+- **Target Country**: {country}
+- **Academic Profile**: GPA {eligibility.get('user_gpa', 3.4)}/4.0 | IELTS {eligibility.get('user_ielts', 6.5)}
+- **Annual Investment Budget**: ${state.get('budget_usd', 25000):,} USD
+
+{crag_section}### Eligibility Check & Critical Guardrails:
+{"".join([f"- ⚠️ {h}\n" for h in eligibility.get("hard_hurdles", [])]) or "- ✅ No hard disqualifying hurdles detected."}
+{"".join([f"- ℹ️ {a}\n" for a in eligibility.get("advisory_notes", [])])}
+
+---
+
+## 2. Recommended Universities & Program Matches
+{uni_rows or "- Universities matching criteria are available in the University Matrix."}
+
+---
+
+## 3. Active Scholarship Opportunities & Funding
+{opp_rows or "- Explore DAAD (Germany), Erasmus Mundus (EU), Fulbright (USA), and Chevening (UK) for comprehensive funding."}
+- **Proof of Living Funds / Visa Requirement**: {immigration.get('financial_proof', 'Standard proof of living funds (~$12,000 - $20,000 USD/year) required for student visa.')}
+
+---
+
+## 4. Post-Study Work Visa (PSWV) & Permanent Residency (PR) Roadmap
+- **Country**: {immigration.get('country', country)}
+- **Post-Graduation Work Permit**: {immigration.get('pswv_duration', '1 to 3 Years')}
+- **PR Pathway**: {immigration.get('pr_pathway', 'Points-tested skilled migration or employer sponsorship')}
+- **PR Timeline**: {immigration.get('pr_timeline', '2 to 5 years of post-study employment')}
+- **Minimum Qualifying Salary**: {immigration.get('salary_threshold', 'Prevailing median wage')}
+- **PR Feasibility Index**: **{immigration.get('pr_difficulty', 'Moderate')}**
+
+---
+
+## 5. Job Market Outlook & Financial ROI
+- **Industry Demand**: **{career.get('industry_demand', 'High')}**
+- **Projected Starting Salary**: **${career.get('projected_starting_salary_avg_usd', 75000):,} USD / year**
+- **Net Program Investment**: ${career.get('net_total_investment_usd', 45000):,} USD
+- **Payback Period**: **{career.get('payback_period_years', 2.0)} Years** ({career.get('roi_rating')} ROI)
+- **3-Year Cumulative Net Profit**: **${career.get('three_year_net_profit_usd', 25000):,} USD**
+
+---
+
+## 6. Actionable Next Steps & Timeline
+1. **Testing**: Schedule IELTS/TOEFL and GRE (if targeting top North American research programs).
+2. **Documents**: Draft Statement of Purpose and request letters of recommendation.
+3. **Application Rounds**: Submit by December 15 - January 15 for priority consideration.
+4. **Visa Preparation**: Open Blocked Account (Germany) or secure GIC (Canada) promptly upon receiving your unconditional admission offer.
+"""
+
+
+# ==========================================
+# Build LangGraph Network with Subgraphs & SqliteSaver
+# ==========================================
+
+def get_checkpointer():
+    """
+    Dual-mode checkpointer:
+    Uses PostgreSQL (PostgresSaver) in production (Render, Neon, Supabase)
+    or SQLite (SqliteSaver) when running locally.
+    """
+    database_url = os.getenv("DATABASE_URL")
+    if database_url and database_url.startswith("postgres"):
+        from langgraph.checkpoint.postgres import PostgresSaver
+        import psycopg
+        from psycopg.rows import dict_row
+
+        if "sslmode=" not in database_url:
+            separator = "&" if "?" in database_url else "?"
+            database_url = f"{database_url}{separator}sslmode=require"
+
+        conn = psycopg.connect(database_url, autocommit=True, row_factory=dict_row)
+        saver = PostgresSaver(conn)
+        saver.setup()
+        return saver
+    else:
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        saver = SqliteSaver(conn)
+        saver.setup()
+        return saver
+
+
+def create_unifinder_graph():
+    graph = StateGraph(UniFinderState)
+
+    graph.add_node("intent_safety", intent_safety_node)
+    graph.add_node("crag_retrieval", crag_retrieval_node)
+    graph.add_node("discovery_subgraph", discovery_subgraph_node)
+    graph.add_node("opportunities_subgraph", opportunities_subgraph_node)
+    graph.add_node("assessment_and_visa", assessment_and_visa_node)
+    graph.add_node("synthesis_counselor", synthesis_counselor_node)
+
+    graph.add_edge(START, "intent_safety")
+    graph.add_edge("intent_safety", "crag_retrieval")
+    graph.add_edge("crag_retrieval", "discovery_subgraph")
+    graph.add_edge("discovery_subgraph", "opportunities_subgraph")
+    graph.add_edge("opportunities_subgraph", "assessment_and_visa")
+    graph.add_edge("assessment_and_visa", "synthesis_counselor")
+    graph.add_edge("synthesis_counselor", END)
+
+    checkpointer = get_checkpointer()
+    return graph.compile(checkpointer=checkpointer)
+
+
+unifinder_graph = create_unifinder_graph()
+
+
+def run_unifinder_agent(
+    user_input: str,
+    thread_id: Optional[str] = None,
+    session_id: Optional[str] = None,
+    degree_level: str = "MSc",
+    subject: str = "Computer Science",
+    country: str = "",
+    user_gpa: float = 3.4,
+    user_ielts: float = 6.5,
+    budget_usd: int = 25000,
+    api_key_override: Optional[str] = None,
+    provider_override: Optional[str] = None
+) -> Dict[str, Any]:
+    if not thread_id:
+        thread_id = f"student_{uuid.uuid4().hex[:8]}"
+    if not session_id:
+        session_id = thread_id
+
+    config = {"configurable": {"thread_id": thread_id}}
+
+    if api_key_override:
+        if provider_override == "gemini":
+            os.environ["GOOGLE_API_KEY"] = api_key_override
+        elif provider_override == "groq":
+            os.environ["GROQ_API_KEY"] = api_key_override
+
+    initial_state: UniFinderState = {
+        "messages": [HumanMessage(content=user_input)],
+        "user_query": user_input,
+        "thread_id": thread_id,
+        "session_id": session_id,
+        "degree_level": degree_level,
+        "subject": subject,
+        "country_pref": country,
+        "user_gpa": user_gpa,
+        "user_ielts": user_ielts,
+        "budget_usd": budget_usd,
+        "is_valid_query": True,
+        "guardrail_warnings": [],
+        "uploaded_chunks": [],
+        "crag_status": "",
+        "crag_grounding": "",
+        "discovered_universities": [],
+        "portal_scraping_result": {},
+        "eligibility_analysis": {},
+        "financial_analysis": {},
+        "immigration_analysis": {},
+        "career_roi_analysis": {},
+        "active_opportunities": [],
+        "living_cost_details": {},
+        "hitl_required": False,
+        "hitl_reason": "",
+        "hitl_options": [],
+        "hitl_approved": False,
+        "dossier_markdown": "",
+        "llm_calls": 0
+    }
+
+    result = unifinder_graph.invoke(initial_state, config=config)
+
+    return {
+        "thread_id": thread_id,
+        "session_id": session_id,
+        "dossier": result.get("dossier_markdown", ""),
+        "discovered_universities": result.get("discovered_universities", []),
+        "portal_scraping_result": result.get("portal_scraping_result", {}),
+        "eligibility_analysis": result.get("eligibility_analysis", {}),
+        "immigration_analysis": result.get("immigration_analysis", {}),
+        "career_roi_analysis": result.get("career_roi_analysis", {}),
+        "active_opportunities": result.get("active_opportunities", []),
+        "living_cost_details": result.get("living_cost_details", {}),
+        "crag_status": result.get("crag_status", ""),
+        "crag_grounding": result.get("crag_grounding", ""),
+        "hitl_required": result.get("hitl_required", False),
+        "hitl_reason": result.get("hitl_reason", ""),
+        "hitl_options": result.get("hitl_options", []),
+        "degree_level": result.get("degree_level", degree_level),
+        "subject": result.get("subject", subject),
+        "country_pref": result.get("country_pref", country),
+        "llm_calls": result.get("llm_calls", 0)
+    }
+
+
+async def run_unifinder_agent_stream(
+    user_input: str,
+    thread_id: str,
+    session_id: str,
+    degree_level: str = "MSc",
+    subject: str = "Computer Science",
+    country: str = "",
+    user_gpa: float = 3.4,
+    user_ielts: float = 6.5,
+    budget_usd: int = 25000,
+    api_key_override: Optional[str] = None,
+    provider_override: Optional[str] = None
+) -> AsyncGenerator[str, None]:
+    """
+    Streaming generator emitting Server-Sent Events (SSE) for real-time tokens and agent events.
+    """
+    # Yield initial step
+    yield f"data: {json.dumps({'type': 'step', 'step': '1. Intent & Security Guardrail', 'status': 'in_progress'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    yield f"data: {json.dumps({'type': 'step', 'step': '2. Corrective RAG (C-RAG)', 'status': 'in_progress'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    yield f"data: {json.dumps({'type': 'step', 'step': '3. MastersPortal & University Discovery', 'status': 'in_progress'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    yield f"data: {json.dumps({'type': 'step', 'step': '4. Live Scholarships & Opportunities', 'status': 'in_progress'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    yield f"data: {json.dumps({'type': 'step', 'step': '5. PR, Living Costs & Career ROI', 'status': 'in_progress'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    yield f"data: {json.dumps({'type': 'step', 'step': '6. Synthesis Counselor Reasoning', 'status': 'in_progress'})}\n\n"
+
+    # Execute graph
+    res = run_unifinder_agent(
+        user_input=user_input,
+        thread_id=thread_id,
+        session_id=session_id,
+        degree_level=degree_level,
+        subject=subject,
+        country=country,
+        user_gpa=user_gpa,
+        user_ielts=user_ielts,
+        budget_usd=budget_usd,
+        api_key_override=api_key_override,
+        provider_override=provider_override
+    )
+
+    # Stream the dossier text in chunks
+    dossier = res["dossier"]
+    chunk_size = 40
+    for i in range(0, len(dossier), chunk_size):
+        chunk = dossier[i:i + chunk_size]
+        yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+        await asyncio.sleep(0.015)
+
+    # Yield final payload with all rich metadata
+    yield f"data: {json.dumps({'type': 'complete', 'data': res})}\n\n"
