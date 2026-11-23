@@ -14,7 +14,7 @@ def print_banner():
     banner = """
 ==============================================================================
    🎓 UniFinder AI — Higher-Ed, Admissions, PR & Career Multi-Agent Platform
-   Palette: Luxury Navy (#0B192C) | Warm Cream (#FDFBF7) | Vibrant Coral (#FF6B6B)
+   Palette: Forest Green (#0B2518) | Sand Beige (#FAF7F0) | Electric Purple (#7C3AED)
 ==============================================================================
 """
     print(banner)
