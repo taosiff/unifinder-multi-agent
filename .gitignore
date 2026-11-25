@@ -9,8 +9,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Uploads
+# Uploads & Vector Store
 uploads/
+vector_store/
 
 # Cloned reference repo
 _reference_tripmate/

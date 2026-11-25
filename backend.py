@@ -42,7 +42,12 @@ from tools.university_scraper_tool import scrape_official_university_admissions
 from tools.web_intelligence import search_web_knowledge
 from tools.pr_visa_tool import evaluate_immigration_pathway
 from tools.career_roi_tool import calculate_roi_and_career_outlook
-from tools.rag_engine import retrieve_relevant_chunks, grade_document_relevance
+from tools.rag_engine import (
+    retrieve_relevant_chunks,
+    grade_document_relevance,
+    get_all_session_chunks,
+    extract_profile_from_text
+)
 from tools.opportunities_tool import get_live_opportunities, get_immigration_news
 from tools.living_cost_tool import get_city_living_cost, get_embassy_visa_checklist
 from guardrails import (
@@ -130,6 +135,7 @@ class UniFinderState(TypedDict):
     uploaded_chunks: List[Dict[str, Any]]
     crag_status: str
     crag_grounding: str
+    cv_extracted_profile: Dict[str, Any]
     # Discovery Subgraph outputs
     discovered_universities: List[Dict[str, Any]]
     portal_scraping_result: Dict[str, Any]
@@ -221,6 +227,52 @@ def crag_retrieval_node(state: UniFinderState):
         "crag_grounding": grounding_text,
         "messages": [AIMessage(content=f"C-RAG Evaluator: Retrieved {len(chunks)} document chunks. Status: {grading['status']}")]
     }
+
+
+# ==========================================
+# Subgraph 2B: CV Profile Extractor Node (Drives University & Program Search)
+# ==========================================
+
+def cv_profile_extractor_node(state: UniFinderState):
+    """
+    Reads the student's uploaded CV/Transcript from the ChromaDB vector store,
+    extracts GPA, IELTS/TOEFL, Major, Skills, and Recommended Next Degree,
+    and updates the search parameters so discovery_subgraph searches universities
+    and programs tailored directly to the CV.
+    """
+    session_id = state.get("session_id", "default_session")
+    all_chunks = get_all_session_chunks(session_id, limit=10)
+
+    if not all_chunks:
+        return {
+            "cv_extracted_profile": {},
+            "messages": [AIMessage(content="CV Extractor: No CV uploaded; using form profile parameters.")]
+        }
+
+    combined_cv = "\n".join(c.get("text", "") for c in all_chunks)
+    extracted = extract_profile_from_text(combined_cv)
+
+    updates: Dict[str, Any] = {
+        "cv_extracted_profile": extracted,
+        "messages": [AIMessage(content=f"CV Extractor (ChromaDB): Extracted profile {extracted} to drive university & program search.")]
+    }
+
+    # Enrich search parameters from CV if detected
+    if extracted.get("detected_major"):
+        updates["subject"] = extracted["detected_major"]
+    if extracted.get("recommended_degree"):
+        updates["degree_level"] = extracted["recommended_degree"]
+    if extracted.get("detected_gpa"):
+        try:
+            gpa_val = float(str(extracted["detected_gpa"]).split("/")[0])
+            if gpa_val <= 4.0:
+                updates["user_gpa"] = gpa_val
+        except ValueError:
+            pass
+    if extracted.get("detected_ielts"):
+        updates["user_ielts"] = float(extracted["detected_ielts"])
+
+    return updates
 
 
 # ==========================================
@@ -407,6 +459,7 @@ def synthesis_counselor_node(state: UniFinderState):
     career = state.get("career_roi_analysis", {})
     opps = state.get("active_opportunities", [])
     crag_grounding = state.get("crag_grounding", "")
+    cv_profile = state.get("cv_extracted_profile", {})
     living = state.get("living_cost_details", {})
 
     prompt = f"""
@@ -423,6 +476,7 @@ STUDENT PROFILE CONSTRAINTS:
 - Academic GPA: {eligibility.get('user_gpa', 3.4)}/4.0 | IELTS: {eligibility.get('user_ielts', 6.5)}
 - Annual Budget: ${state.get('budget_usd', 25000):,} USD
 
+{f"CV EXTRACTED PROFILE (FROM CHROMADB VECTOR STORE):\n{json.dumps(cv_profile, indent=2)}\n" if cv_profile else ""}
 {f"DOCUMENT EVIDENCE (FROM UPLOADED STUDENT TRANSCRIPT/CV VIA CORRECTIVE RAG):\n{crag_grounding}\n" if crag_grounding else ""}
 
 DISCOVERED UNIVERSITIES (CURATED DATABASE):
@@ -611,6 +665,7 @@ def create_unifinder_graph():
 
     graph.add_node("intent_safety", intent_safety_node)
     graph.add_node("crag_retrieval", crag_retrieval_node)
+    graph.add_node("cv_profile_extractor", cv_profile_extractor_node)
     graph.add_node("discovery_subgraph", discovery_subgraph_node)
     graph.add_node("official_site_admissions", official_site_admissions_node)
     graph.add_node("opportunities_subgraph", opportunities_subgraph_node)
@@ -619,7 +674,8 @@ def create_unifinder_graph():
 
     graph.add_edge(START, "intent_safety")
     graph.add_edge("intent_safety", "crag_retrieval")
-    graph.add_edge("crag_retrieval", "discovery_subgraph")
+    graph.add_edge("crag_retrieval", "cv_profile_extractor")
+    graph.add_edge("cv_profile_extractor", "discovery_subgraph")
     graph.add_edge("discovery_subgraph", "official_site_admissions")
     graph.add_edge("official_site_admissions", "opportunities_subgraph")
     graph.add_edge("opportunities_subgraph", "assessment_and_visa")
@@ -675,6 +731,7 @@ def run_unifinder_agent(
         "uploaded_chunks": [],
         "crag_status": "",
         "crag_grounding": "",
+        "cv_extracted_profile": {},
         "discovered_universities": [],
         "portal_scraping_result": {},
         "univs_catalogue_results": [],
@@ -712,6 +769,7 @@ def run_unifinder_agent(
         "living_cost_details": result.get("living_cost_details", {}),
         "crag_status": result.get("crag_status", ""),
         "crag_grounding": result.get("crag_grounding", ""),
+        "cv_extracted_profile": result.get("cv_extracted_profile", {}),
         "hitl_required": result.get("hitl_required", False),
         "hitl_reason": result.get("hitl_reason", ""),
         "hitl_options": result.get("hitl_options", []),
