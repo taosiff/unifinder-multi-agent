@@ -66,9 +66,9 @@ class UniFinderRequest(BaseModel):
     degree_level: Optional[str] = "MSc"
     subject: Optional[str] = "Computer Science"
     country: Optional[str] = ""
-    user_gpa: Optional[float] = 3.4
-    user_ielts: Optional[float] = 6.5
-    budget_usd: Optional[int] = 25000
+    user_gpa: Optional[float] = None
+    user_ielts: Optional[float] = None
+    budget_usd: Optional[int] = None
     api_key: Optional[str] = None
     llm_provider: Optional[str] = "gemini"
 
@@ -226,9 +226,9 @@ async def chat_streaming(req: UniFinderRequest):
         degree_level=req.degree_level or "MSc",
         subject=req.subject or "Computer Science",
         country=req.country or "",
-        user_gpa=req.user_gpa or 3.4,
-        user_ielts=req.user_ielts or 6.5,
-        budget_usd=req.budget_usd or 25000,
+        user_gpa=req.user_gpa,
+        user_ielts=req.user_ielts,
+        budget_usd=req.budget_usd,
         api_key_override=req.api_key,
         provider_override=req.llm_provider
     )

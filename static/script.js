@@ -403,7 +403,13 @@ function selectDegree(degree) {
 }
 
 function updateBudgetDisplay(val) {
-    document.getElementById("budgetValue").textContent = `$${parseInt(val).toLocaleString()} USD`;
+    const el = document.getElementById("budgetValue");
+    if (!el) return;
+    if (val === "" || val === null || val === undefined) {
+        el.textContent = "Any";
+    } else {
+        el.textContent = `$${parseInt(val).toLocaleString()} USD`;
+    }
 }
 
 function setQuickScenario(deg, subj, country, gpa, ielts, budget, query) {
@@ -447,6 +453,10 @@ async function runFinder() {
         if (thinkingText) thinkingText.textContent = "Analyzing your profile & goals...";
     }
 
+    const rawGpa = document.getElementById("gpaInput").value.trim();
+    const rawIelts = document.getElementById("ieltsInput").value.trim();
+    const rawBudget = document.getElementById("budgetInput").value.trim();
+
     const payload = {
         message: query,
         thread_id: currentThreadId,
@@ -454,9 +464,9 @@ async function runFinder() {
         degree_level: selectedDegree,
         subject: document.getElementById("subjectInput").value.trim() || "Computer Science",
         country: document.getElementById("countryInput").value,
-        user_gpa: parseFloat(document.getElementById("gpaInput").value) || 3.4,
-        user_ielts: parseFloat(document.getElementById("ieltsInput").value) || 6.5,
-        budget_usd: parseInt(document.getElementById("budgetInput").value) || 25000,
+        user_gpa: rawGpa ? parseFloat(rawGpa) : null,
+        user_ielts: rawIelts ? parseFloat(rawIelts) : null,
+        budget_usd: rawBudget ? parseInt(rawBudget) : null,
         api_key: storedApiKey || null,
         llm_provider: activeProvider
     };

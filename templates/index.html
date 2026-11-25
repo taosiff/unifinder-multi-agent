@@ -2285,17 +2285,17 @@ html, body {
                         <div class="form-row">
                             <div class="form-group half">
                                 <label for="gpaInput">Your GPA (out of 4.0)</label>
-                                <input type="number" id="gpaInput" step="0.05" min="2.0" max="4.0" value="3.4">
+                                <input type="number" id="gpaInput" step="0.05" min="2.0" max="4.0" value="" placeholder="Optional (e.g. 3.4)">
                             </div>
                             <div class="form-group half">
                                 <label for="ieltsInput">IELTS / TOEFL</label>
-                                <input type="number" id="ieltsInput" step="0.5" min="5.0" max="9.0" value="7.0">
+                                <input type="number" id="ieltsInput" step="0.5" min="5.0" max="9.0" value="" placeholder="Optional (e.g. 7.0)">
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="budgetInput">Max Annual Tuition Budget: <strong id="budgetValue">$25,000 USD</strong></label>
-                            <input type="range" id="budgetInput" min="0" max="70000" step="2500" value="25000" oninput="updateBudgetDisplay(this.value)">
+                            <label for="budgetInput">Max Annual Tuition Budget: <strong id="budgetValue">Any</strong></label>
+                            <input type="number" id="budgetInput" min="0" step="1000" value="" placeholder="Optional (e.g. 25000)" oninput="updateBudgetDisplay(this.value)">
                         </div>
 
                         <!-- Quick Prompts Chips -->

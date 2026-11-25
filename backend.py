@@ -225,9 +225,9 @@ class UniFinderState(TypedDict):
     degree_level: str
     subject: str
     country_pref: str
-    user_gpa: float
-    user_ielts: float
-    budget_usd: int
+    user_gpa: Optional[float]
+    user_ielts: Optional[float]
+    budget_usd: Optional[int]
     is_valid_query: bool
     guardrail_warnings: List[str]
     # RAG / Document Upload state
@@ -417,15 +417,15 @@ def agent_web_search_node(state: UniFinderState):
 
 
 def agent_db_search_node(state: UniFinderState):
-    budget = state.get("budget_usd", 0)
-    gpa = state.get("user_gpa", 0.0)
+    budget = state.get("budget_usd")
+    gpa = state.get("user_gpa")
     country = state["country_pref"]
     db_results = search_universities(
         degree_level=state["degree_level"],
         subject=state["subject"],
         country=country,
-        max_tuition=budget if budget > 5000 else None,
-        user_gpa=gpa if gpa > 0 else None,
+        max_tuition=budget if (budget is not None and budget > 0) else None,
+        user_gpa=gpa if (gpa is not None and gpa > 0) else None,
         limit=6
     )
     if not db_results and country:
@@ -556,29 +556,39 @@ def opportunities_subgraph_node(state: UniFinderState):
 # ==========================================
 
 def assessment_and_visa_node(state: UniFinderState):
-    gpa = state.get("user_gpa", 3.4)
-    ielts = state.get("user_ielts", 6.5)
+    gpa = state.get("user_gpa")
+    ielts = state.get("user_ielts")
     country = state.get("country_pref") or "Germany"
     degree = state.get("degree_level", "MSc")
     subject = state.get("subject", "Computer Science")
-    budget = state.get("budget_usd", 25000)
+    budget = state.get("budget_usd")
 
-    # 1. Eligibility Check
-    eligibility_report = evaluate_eligibility_guardrail(
-        user_gpa=gpa, user_ielts=ielts, target_country=country, target_degree=degree
-    )
+    # 1. Eligibility Check (only if GPA or IELTS is provided)
+    if gpa is not None or ielts is not None:
+        eligibility_report = evaluate_eligibility_guardrail(
+            user_gpa=gpa if gpa is not None else 3.5,
+            user_ielts=ielts if ielts is not None else 7.0,
+            target_country=country,
+            target_degree=degree
+        )
+    else:
+        eligibility_report = {
+            "hard_hurdles": [],
+            "advisory_notes": ["GPA & IELTS not specified — showing matching universities without CGPA filtering."]
+        }
 
-    # 2. Classify admission chances
+    # 2. Classify admission chances ONLY if user provided GPA
     classified = []
-    for uni in state.get("discovered_universities", []):
-        min_gpa = uni.get("min_gpa", 3.0)
-        acceptance = uni.get("acceptance_rate_percent", 30.0)
-        tier = classify_admission_chances(gpa, min_gpa, acceptance)
-        classified.append({
-            "name": uni["name"], "country": uni["country"], "tier": tier,
-            "min_gpa": min_gpa, "acceptance_rate": f"{acceptance}%",
-            "tuition_usd": uni.get("tuition_fee_annual_usd", 0)
-        })
+    if gpa is not None:
+        for uni in state.get("discovered_universities", []):
+            min_gpa = uni.get("min_gpa", 3.0)
+            acceptance = uni.get("acceptance_rate_percent", 30.0)
+            tier = classify_admission_chances(gpa, min_gpa, acceptance)
+            classified.append({
+                "name": uni["name"], "country": uni["country"], "tier": tier,
+                "min_gpa": min_gpa, "acceptance_rate": f"{acceptance}%",
+                "tuition_usd": uni.get("tuition_fee_annual_usd", 0)
+            })
 
     # 3. Immigration Pathway
     imm_eval = evaluate_immigration_pathway(country=country, degree_level=degree, major=subject)
@@ -597,9 +607,12 @@ def assessment_and_visa_node(state: UniFinderState):
         program_duration_years=2.0 if degree == "MSc" else 4.0 if degree == "BSc" else 3.5
     )
 
-    # 6. HITL Trigger evaluation
+    # 6. HITL Trigger evaluation (skip false triggers when budget/GPA are unset)
     hitl_check = check_human_in_the_loop_trigger(
-        user_budget_usd=budget, discovered_unis=classified, user_gpa=gpa, country=country
+        user_budget_usd=budget if budget is not None else 999999,
+        discovered_unis=classified,
+        user_gpa=gpa if gpa is not None else 4.0,
+        country=country
     )
 
     return {
@@ -662,8 +675,8 @@ STUDENT PROFILE CONSTRAINTS:
 - Degree Level: {state.get('degree_level')}
 - Major: {state.get('subject')}
 - Country Preference: {state.get('country_pref') or 'Global Top Options'}
-- Academic GPA: {eligibility.get('user_gpa', 3.4)}/4.0 | IELTS: {eligibility.get('user_ielts', 6.5)}
-- Annual Budget: ${state.get('budget_usd', 25000):,} USD
+- Academic GPA: {f"{eligibility.get('user_gpa')}/4.0" if eligibility.get('user_gpa') is not None else "Not provided (do NOT filter or reject universities by CGPA)"} | IELTS: {eligibility.get('user_ielts') if eligibility.get('user_ielts') is not None else "Not provided"}
+- Annual Budget: {f"${state.get('budget_usd'):,} USD" if state.get('budget_usd') is not None else "Flexible / Not specified"}
 
 {f"CV EXTRACTED PROFILE (FROM CHROMADB VECTOR STORE):\n{json.dumps(cv_profile, indent=2)}\n" if cv_profile else ""}
 {f"DOCUMENT EVIDENCE (FROM UPLOADED STUDENT TRANSCRIPT/CV VIA CORRECTIVE RAG):\n{crag_grounding}\n" if crag_grounding else ""}
@@ -936,9 +949,9 @@ def run_unifinder_agent(
     degree_level: str = "MSc",
     subject: str = "Computer Science",
     country: str = "",
-    user_gpa: float = 3.4,
-    user_ielts: float = 6.5,
-    budget_usd: int = 25000,
+    user_gpa: Optional[float] = None,
+    user_ielts: Optional[float] = None,
+    budget_usd: Optional[int] = None,
     api_key_override: Optional[str] = None,
     provider_override: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -1037,9 +1050,9 @@ async def run_unifinder_agent_stream(
     degree_level: str = "MSc",
     subject: str = "Computer Science",
     country: str = "",
-    user_gpa: float = 3.4,
-    user_ielts: float = 6.5,
-    budget_usd: int = 25000,
+    user_gpa: Optional[float] = None,
+    user_ielts: Optional[float] = None,
+    budget_usd: Optional[int] = None,
     api_key_override: Optional[str] = None,
     provider_override: Optional[str] = None
 ) -> AsyncGenerator[str, None]:
