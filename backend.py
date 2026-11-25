@@ -185,27 +185,27 @@ def invoke_llm_with_fallback(messages: List[AnyMessage]) -> Optional[str]:
 
     openai_compat_providers = [
         (
-            "CEREBRAS_API_KEY",
-            "https://api.cerebras.ai/v1/chat/completions",
-            ["llama-3.3-70b", "llama3.1-8b"],
-            None
-        ),
-        (
-            "OPENROUTER_API_KEY",
-            "https://openrouter.ai/api/v1/chat/completions",
-            ["meta-llama/llama-3.3-70b-instruct:free", "google/gemma-3-27b-it:free", "deepseek/deepseek-r1:free"],
-            {"HTTP-Referer": "https://unifinder.local", "X-Title": "UniFinder AI"}
-        ),
-        (
             "MISTRAL_API_KEY",
             "https://api.mistral.ai/v1/chat/completions",
             ["mistral-small-latest", "open-mistral-nemo"],
             None
         ),
         (
-            "SAMBANOVA_API_KEY",
-            "https://api.sambanova.ai/v1/chat/completions",
-            ["Meta-Llama-3.3-70B-Instruct", "Meta-Llama-3.1-8B-Instruct"],
+            "GITHUB_TOKEN",
+            "https://models.inference.ai.azure.com/chat/completions",
+            ["gpt-4o-mini", "Meta-Llama-3.3-70B-Instruct"],
+            None
+        ),
+        (
+            "HF_TOKEN",
+            "https://router.huggingface.co/v1/chat/completions",
+            ["Qwen/Qwen2.5-72B-Instruct", "meta-llama/Llama-3.3-70B-Instruct"],
+            None
+        ),
+        (
+            "COHERE_API_KEY",
+            "https://api.cohere.com/compatibility/v1/chat/completions",
+            ["command-a-03-2025", "command-r-08-2024"],
             None
         ),
     ]
