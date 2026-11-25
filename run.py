@@ -14,7 +14,7 @@ def print_banner():
     banner = """
 ==============================================================================
    🎓 UniFinder AI — Higher-Ed, Admissions, PR & Career Multi-Agent Platform
-   Palette: Forest Green (#0B2518) | Sand Beige (#FAF7F0) | Electric Purple (#7C3AED)
+   Palette: Ghost White (#FEFFFA) | Cool Gray (#2D353F) | Freezing Blue (#0D5C75)
 ==============================================================================
 """
     print(banner)
