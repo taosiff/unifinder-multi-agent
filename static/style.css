@@ -158,7 +158,8 @@ a:hover {
 }
 
 .nav-container {
-    max-width: 1520px;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
@@ -295,11 +296,11 @@ a:hover {
    Slide-out History Drawer
    ========================================================================== */
 .layout-container {
-    max-width: 1520px;
+    max-width: 100%;
     margin: 0 auto;
     width: 100%;
     position: relative;
-    padding: 0 1rem;
+    padding: 0;
 }
 
 .sidebar-backdrop {
@@ -476,8 +477,8 @@ a:hover {
    ========================================================================== */
 .app-wrapper {
     width: 100%;
-    padding: 1.2rem 1.25rem 3.5rem;
-    max-width: 1520px;
+    padding: 1.25rem 2rem 3.5rem;
+    max-width: 100%;
     margin: 0 auto;
 }
 
@@ -586,7 +587,7 @@ a:hover {
    ========================================================================== */
 .counselor-grid {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 360px 1fr;
     gap: 1.5rem;
     align-items: stretch;
 }
