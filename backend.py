@@ -39,6 +39,7 @@ from database import search_universities
 from tools.mastersportal_tool import scrape_studyportals
 from tools.univs_tool import search_univs_programs
 from tools.university_scraper_tool import scrape_official_university_admissions
+from tools.reviews_tool import fetch_university_reviews
 from tools.web_intelligence import search_web_knowledge
 from tools.pr_visa_tool import evaluate_immigration_pathway
 from tools.career_roi_tool import calculate_roi_and_career_outlook
@@ -48,7 +49,11 @@ from tools.rag_engine import (
     get_all_session_chunks,
     extract_profile_from_text
 )
-from tools.opportunities_tool import get_live_opportunities, get_immigration_news
+from tools.opportunities_tool import (
+    get_live_opportunities,
+    get_immigration_news,
+    search_live_scholarship_opportunities
+)
 from tools.living_cost_tool import get_city_living_cost, get_embassy_visa_checklist
 from guardrails import (
     check_intent_guardrail,
@@ -142,6 +147,7 @@ class UniFinderState(TypedDict):
     univs_catalogue_results: List[Dict[str, Any]]
     web_search_results: str
     official_admissions_scraped: List[Dict[str, Any]]
+    university_reviews: List[Dict[str, Any]]
     # Assessment & Opportunity outputs
     eligibility_analysis: Dict[str, Any]
     financial_analysis: Dict[str, Any]
@@ -276,49 +282,100 @@ def cv_profile_extractor_node(state: UniFinderState):
 
 
 # ==========================================
-# Subgraph 3: Discovery & Scraper Subgraph
+# Stage 1: 4 Parallel Search Agent Nodes (Sharing Same State)
 # ==========================================
 
-def discovery_subgraph_node(state: UniFinderState):
-    degree = state["degree_level"]
-    subject = state["subject"]
-    country = state["country_pref"]
+def agent_univs_search_node(state: UniFinderState):
+    res = search_univs_programs(
+        query=state["subject"],
+        country=state["country_pref"],
+        degree_level=state["degree_level"],
+        limit=8
+    )
+    programs = res.get("programs", []) if isinstance(res, dict) else []
+    return {
+        "univs_catalogue_results": programs,
+        "messages": [AIMessage(content=f"Univs.com Agent: Found {len(programs)} live programs.")]
+    }
+
+
+def agent_studyportals_scraper_node(state: UniFinderState):
+    portal_data = scrape_studyportals(
+        degree_level=state["degree_level"],
+        subject=state["subject"],
+        country=state["country_pref"]
+    )
+    return {
+        "portal_scraping_result": portal_data,
+        "messages": [AIMessage(content="StudyPortals Agent: Scraped portal listings.")]
+    }
+
+
+def agent_web_search_node(state: UniFinderState):
+    web_query = f"top universities {state['degree_level']} {state['subject']} {state['country_pref']} tuition admission".strip()
+    web_data = search_web_knowledge(web_query, 4)
+    return {
+        "web_search_results": json.dumps(web_data, default=str),
+        "messages": [AIMessage(content=f"Web Search Agent: Gathered {len(web_data)} live web results.")]
+    }
+
+
+def agent_db_search_node(state: UniFinderState):
     budget = state.get("budget_usd", 0)
     gpa = state.get("user_gpa", 0.0)
-
-    web_query = f"top universities {degree} {subject} {country} tuition admission".strip()
-
-    # Execute Discovery Tools in Parallel (Studyportals, Univs.com API, Web Search, Database)
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        future_portal = executor.submit(scrape_studyportals, degree_level=degree, subject=subject, country=country)
-        future_univs = executor.submit(search_univs_programs, query=subject, country=country, degree_level=degree, limit=8)
-        future_web = executor.submit(search_web_knowledge, web_query, 4)
-        future_db = executor.submit(
-            search_universities,
-            degree_level=degree,
-            subject=subject,
-            country=country,
-            max_tuition=budget if budget > 5000 else None,
-            user_gpa=gpa if gpa > 0 else None,
-            limit=6
-        )
-
-        portal_data = future_portal.result()
-        univs_resp = future_univs.result()
-        web_data = future_web.result()
-        db_results = future_db.result()
-
+    country = state["country_pref"]
+    db_results = search_universities(
+        degree_level=state["degree_level"],
+        subject=state["subject"],
+        country=country,
+        max_tuition=budget if budget > 5000 else None,
+        user_gpa=gpa if gpa > 0 else None,
+        limit=6
+    )
     if not db_results and country:
-        db_results = search_universities(degree_level=degree, subject=subject, country=None, limit=6)
-
-    univs_programs = univs_resp.get("programs", []) if isinstance(univs_resp, dict) else []
-
+        db_results = search_universities(degree_level=state["degree_level"], subject=state["subject"], country=None, limit=6)
     return {
         "discovered_universities": db_results,
-        "portal_scraping_result": portal_data,
-        "univs_catalogue_results": univs_programs,
-        "web_search_results": web_data,
-        "messages": [AIMessage(content=f"Discovery Subgraph (Parallel): Matched {len(db_results)} DB institutions & {len(univs_programs)} live Univs.com programs.")]
+        "messages": [AIMessage(content=f"Database Agent: Matched {len(db_results)} curated institutions.")]
+    }
+
+
+def merge_discovery_node(state: UniFinderState):
+    """Synchronization barrier after the 4 parallel search agents finish."""
+    return {
+        "messages": [AIMessage(content="Discovery Fan-In: All 4 parallel search agents completed. Launching parallel review, admissions, and scholarship agents.")]
+    }
+
+
+# Keep backward-compatible helper alias for direct unit tests
+def discovery_subgraph_node(state: UniFinderState):
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        f1 = executor.submit(agent_univs_search_node, state)
+        f2 = executor.submit(agent_studyportals_scraper_node, state)
+        f3 = executor.submit(agent_web_search_node, state)
+        f4 = executor.submit(agent_db_search_node, state)
+        r1, r2, r3, r4 = f1.result(), f2.result(), f3.result(), f4.result()
+    return {
+        **r1, **r2, **r3, **r4,
+        "messages": r1["messages"] + r2["messages"] + r3["messages"] + r4["messages"]
+    }
+
+
+# ==========================================
+# Stage 2: Parallel Enrichment Agents (Official Admissions, Reddit Reviews, Scholarships, PR/ROI)
+# ==========================================
+
+def reddit_reviews_node(state: UniFinderState):
+    """Parallel Agent: Extracts student & alumni reviews from Reddit RSS + web forums."""
+    unis = state.get("discovered_universities", [])
+    reviews = fetch_university_reviews(
+        universities=unis,
+        degree_level=state.get("degree_level", "MSc"),
+        subject=state.get("subject", "Computer Science")
+    )
+    return {
+        "university_reviews": reviews,
+        "messages": [AIMessage(content=f"Reddit & Reviews Agent: Extracted student/alumni reviews for {len(reviews)} universities.")]
     }
 
 
@@ -453,6 +510,7 @@ def synthesis_counselor_node(state: UniFinderState):
     unis = state.get("discovered_universities", [])
     univs_live = state.get("univs_catalogue_results", [])
     official_scraped = state.get("official_admissions_scraped", [])
+    uni_reviews = state.get("university_reviews", [])
     web_search = state.get("web_search_results", "")
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
@@ -487,6 +545,9 @@ LIVE UNIVS.COM CATALOGUE MATCHES (22,900+ INSTITUTES):
 
 OFFICIAL UNIVERSITY WEBSITE SCRAPED ADMISSIONS (TUITION, IELTS/TOEFL, GPA, DEADLINES, INTAKES & PROGRAMS):
 {json.dumps(official_scraped, indent=2, default=str)}
+
+STUDENT & ALUMNI REVIEWS (REDDIT & FORUMS):
+{json.dumps(uni_reviews, indent=2, default=str)}
 
 LIVE WEB INTELLIGENCE (DUCKDUCKGO / GOOGLE PARALLEL SEARCH):
 {web_search[:1200] if web_search else "N/A"}
@@ -551,6 +612,7 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
     unis = state.get("discovered_universities", [])
     univs_live = state.get("univs_catalogue_results", [])
     official_scraped = state.get("official_admissions_scraped", [])
+    uni_reviews = state.get("university_reviews", [])
     web_search = state.get("web_search_results", "")
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
@@ -663,24 +725,53 @@ def get_checkpointer():
 def create_unifinder_graph():
     graph = StateGraph(UniFinderState)
 
+    # Entry & CV Memory Nodes
     graph.add_node("intent_safety", intent_safety_node)
     graph.add_node("crag_retrieval", crag_retrieval_node)
     graph.add_node("cv_profile_extractor", cv_profile_extractor_node)
-    graph.add_node("discovery_subgraph", discovery_subgraph_node)
-    graph.add_node("official_site_admissions", official_site_admissions_node)
-    graph.add_node("opportunities_subgraph", opportunities_subgraph_node)
-    graph.add_node("assessment_and_visa", assessment_and_visa_node)
-    graph.add_node("synthesis_counselor", synthesis_counselor_node)
 
+    # Stage 1: 4 Parallel Search Agent Nodes
+    graph.add_node("agent_univs_search", agent_univs_search_node)
+    graph.add_node("agent_studyportals_scraper", agent_studyportals_scraper_node)
+    graph.add_node("agent_web_search", agent_web_search_node)
+    graph.add_node("agent_db_search", agent_db_search_node)
+    graph.add_node("merge_discovery", merge_discovery_node)
+
+    # Stage 2: 4 Parallel Enrichment Agent Nodes
+    graph.add_node("agent_official_admissions", official_site_admissions_node)
+    graph.add_node("agent_reddit_reviews", reddit_reviews_node)
+    graph.add_node("agent_scholarship_finder", opportunities_subgraph_node)
+    graph.add_node("agent_assessment_visa", assessment_and_visa_node)
+
+    # Stage 3: Final Answer Generator Agent Node
+    graph.add_node("answer_generator", synthesis_counselor_node)
+
+    # Wiring: Sequential Entry -> 4-Way Parallel Search -> Fan-In -> 4-Way Parallel Enrichment -> Answer Generator
     graph.add_edge(START, "intent_safety")
     graph.add_edge("intent_safety", "crag_retrieval")
     graph.add_edge("crag_retrieval", "cv_profile_extractor")
-    graph.add_edge("cv_profile_extractor", "discovery_subgraph")
-    graph.add_edge("discovery_subgraph", "official_site_admissions")
-    graph.add_edge("official_site_admissions", "opportunities_subgraph")
-    graph.add_edge("opportunities_subgraph", "assessment_and_visa")
-    graph.add_edge("assessment_and_visa", "synthesis_counselor")
-    graph.add_edge("synthesis_counselor", END)
+
+    search_agents = [
+        "agent_univs_search",
+        "agent_studyportals_scraper",
+        "agent_web_search",
+        "agent_db_search",
+    ]
+    for sa in search_agents:
+        graph.add_edge("cv_profile_extractor", sa)
+        graph.add_edge(sa, "merge_discovery")
+
+    enrichment_agents = [
+        "agent_official_admissions",
+        "agent_reddit_reviews",
+        "agent_scholarship_finder",
+        "agent_assessment_visa",
+    ]
+    for ea in enrichment_agents:
+        graph.add_edge("merge_discovery", ea)
+        graph.add_edge(ea, "answer_generator")
+
+    graph.add_edge("answer_generator", END)
 
     checkpointer = get_checkpointer()
     return graph.compile(checkpointer=checkpointer)
@@ -737,6 +828,7 @@ def run_unifinder_agent(
         "univs_catalogue_results": [],
         "web_search_results": "",
         "official_admissions_scraped": [],
+        "university_reviews": [],
         "eligibility_analysis": {},
         "financial_analysis": {},
         "immigration_analysis": {},
@@ -762,6 +854,7 @@ def run_unifinder_agent(
         "univs_catalogue_results": result.get("univs_catalogue_results", []),
         "web_search_results": result.get("web_search_results", ""),
         "official_admissions_scraped": result.get("official_admissions_scraped", []),
+        "university_reviews": result.get("university_reviews", []),
         "eligibility_analysis": result.get("eligibility_analysis", {}),
         "immigration_analysis": result.get("immigration_analysis", {}),
         "career_roi_analysis": result.get("career_roi_analysis", {}),
@@ -794,48 +887,140 @@ async def run_unifinder_agent_stream(
     provider_override: Optional[str] = None
 ) -> AsyncGenerator[str, None]:
     """
-    Streaming generator emitting Server-Sent Events (SSE) for real-time tokens and agent events.
+    Real-time LangGraph streaming generator emitting live parallel agent completion events
+    and token-by-token Answer Generator streaming via Server-Sent Events (SSE).
     """
-    # Yield initial step
-    yield f"data: {json.dumps({'type': 'step', 'step': '1. Intent & Security Guardrail', 'status': 'in_progress'})}\n\n"
-    await asyncio.sleep(0.1)
+    if not thread_id:
+        thread_id = f"student_{uuid.uuid4().hex[:8]}"
+    if not session_id:
+        session_id = thread_id
 
-    yield f"data: {json.dumps({'type': 'step', 'step': '2. Corrective RAG (C-RAG)', 'status': 'in_progress'})}\n\n"
-    await asyncio.sleep(0.1)
+    config = {"configurable": {"thread_id": thread_id}}
 
-    yield f"data: {json.dumps({'type': 'step', 'step': '3. MastersPortal & University Discovery', 'status': 'in_progress'})}\n\n"
-    await asyncio.sleep(0.1)
+    if api_key_override:
+        if provider_override == "gemini":
+            os.environ["GOOGLE_API_KEY"] = api_key_override
+        elif provider_override == "groq":
+            os.environ["GROQ_API_KEY"] = api_key_override
 
-    yield f"data: {json.dumps({'type': 'step', 'step': '4. Live Scholarships & Opportunities', 'status': 'in_progress'})}\n\n"
-    await asyncio.sleep(0.1)
+    initial_state: UniFinderState = {
+        "messages": [HumanMessage(content=user_input)],
+        "user_query": user_input,
+        "thread_id": thread_id,
+        "session_id": session_id,
+        "degree_level": degree_level,
+        "subject": subject,
+        "country_pref": country,
+        "user_gpa": user_gpa,
+        "user_ielts": user_ielts,
+        "budget_usd": budget_usd,
+        "is_valid_query": True,
+        "guardrail_warnings": [],
+        "uploaded_chunks": [],
+        "crag_status": "",
+        "crag_grounding": "",
+        "cv_extracted_profile": {},
+        "discovered_universities": [],
+        "portal_scraping_result": {},
+        "univs_catalogue_results": [],
+        "web_search_results": "",
+        "official_admissions_scraped": [],
+        "university_reviews": [],
+        "eligibility_analysis": {},
+        "financial_analysis": {},
+        "immigration_analysis": {},
+        "career_roi_analysis": {},
+        "active_opportunities": [],
+        "living_cost_details": {},
+        "hitl_required": False,
+        "hitl_reason": "",
+        "hitl_options": [],
+        "hitl_approved": False,
+        "dossier_markdown": "",
+        "llm_calls": 0
+    }
 
-    yield f"data: {json.dumps({'type': 'step', 'step': '5. PR, Living Costs & Career ROI', 'status': 'in_progress'})}\n\n"
-    await asyncio.sleep(0.1)
+    node_labels = {
+        "intent_safety": ("0", "Security Guardrail"),
+        "crag_retrieval": ("0", "C-RAG Document Evaluator"),
+        "cv_profile_extractor": ("0", "CV Profile Extractor"),
+        "agent_univs_search": ("1", "Univs.com Search Agent"),
+        "agent_studyportals_scraper": ("1", "StudyPortals Scraper Agent"),
+        "agent_web_search": ("1", "Web Search Agent"),
+        "agent_db_search": ("1", "Curated DB Agent"),
+        "merge_discovery": ("1", "Search Fan-In Sync"),
+        "agent_official_admissions": ("2", "Official Website Admissions Agent"),
+        "agent_reddit_reviews": ("2", "Reddit & Student Reviews Agent"),
+        "agent_scholarship_finder": ("2", "Scholarship Finder Agent"),
+        "agent_assessment_visa": ("2", "PR, Living Cost & ROI Agent"),
+        "answer_generator": ("3", "Answer Generator Agent"),
+    }
 
-    yield f"data: {json.dumps({'type': 'step', 'step': '6. Synthesis Counselor Reasoning', 'status': 'in_progress'})}\n\n"
+    accumulated: Dict[str, Any] = dict(initial_state)
+    queue: asyncio.Queue = asyncio.Queue()
+    loop = asyncio.get_running_loop()
 
-    # Execute graph
-    res = run_unifinder_agent(
-        user_input=user_input,
-        thread_id=thread_id,
-        session_id=session_id,
-        degree_level=degree_level,
-        subject=subject,
-        country=country,
-        user_gpa=user_gpa,
-        user_ielts=user_ielts,
-        budget_usd=budget_usd,
-        api_key_override=api_key_override,
-        provider_override=provider_override
-    )
+    def _run_sync_stream():
+        try:
+            for update in unifinder_graph.stream(initial_state, config=config, stream_mode="updates"):
+                loop.call_soon_threadsafe(queue.put_nowait, ("update", update))
+        except Exception as exc:
+            loop.call_soon_threadsafe(queue.put_nowait, ("error", str(exc)))
+        finally:
+            loop.call_soon_threadsafe(queue.put_nowait, ("done", None))
 
-    # Stream the dossier text in chunks
-    dossier = res["dossier"]
-    chunk_size = 40
+    loop.run_in_executor(None, _run_sync_stream)
+
+    while True:
+        kind, payload = await queue.get()
+        if kind == "done":
+            break
+        if kind == "error":
+            raise RuntimeError(payload)
+        for node_name, node_out in payload.items():
+            if isinstance(node_out, dict):
+                for k, v in node_out.items():
+                    if k != "messages":
+                        accumulated[k] = v
+
+                stage, label = node_labels.get(node_name, ("1", node_name))
+                msgs = node_out.get("messages") or []
+                summary = msgs[-1].content if msgs else f"{label} completed."
+
+                yield f"data: {json.dumps({'type': 'agent_event', 'node': node_name, 'stage': stage, 'label': label, 'status': 'completed', 'summary': summary})}\n\n"
+                yield f"data: {json.dumps({'type': 'step', 'step': label, 'status': 'completed'})}\n\n"
+
+    dossier = accumulated.get("dossier_markdown", "")
+    chunk_size = 45
     for i in range(0, len(dossier), chunk_size):
         chunk = dossier[i:i + chunk_size]
         yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
-        await asyncio.sleep(0.015)
+        await asyncio.sleep(0.012)
 
-    # Yield final payload with all rich metadata
-    yield f"data: {json.dumps({'type': 'complete', 'data': res})}\n\n"
+    final_res = {
+        "thread_id": thread_id,
+        "session_id": session_id,
+        "dossier": dossier,
+        "discovered_universities": accumulated.get("discovered_universities", []),
+        "portal_scraping_result": accumulated.get("portal_scraping_result", {}),
+        "univs_catalogue_results": accumulated.get("univs_catalogue_results", []),
+        "web_search_results": accumulated.get("web_search_results", ""),
+        "official_admissions_scraped": accumulated.get("official_admissions_scraped", []),
+        "university_reviews": accumulated.get("university_reviews", []),
+        "eligibility_analysis": accumulated.get("eligibility_analysis", {}),
+        "immigration_analysis": accumulated.get("immigration_analysis", {}),
+        "career_roi_analysis": accumulated.get("career_roi_analysis", {}),
+        "active_opportunities": accumulated.get("active_opportunities", []),
+        "living_cost_details": accumulated.get("living_cost_details", {}),
+        "crag_status": accumulated.get("crag_status", ""),
+        "crag_grounding": accumulated.get("crag_grounding", ""),
+        "cv_extracted_profile": accumulated.get("cv_extracted_profile", {}),
+        "hitl_required": accumulated.get("hitl_required", False),
+        "hitl_reason": accumulated.get("hitl_reason", ""),
+        "hitl_options": accumulated.get("hitl_options", []),
+        "degree_level": accumulated.get("degree_level", degree_level),
+        "subject": accumulated.get("subject", subject),
+        "country_pref": accumulated.get("country_pref", country),
+        "llm_calls": accumulated.get("llm_calls", 0)
+    }
+    yield f"data: {json.dumps({'type': 'complete', 'data': final_res}, default=str)}\n\n"

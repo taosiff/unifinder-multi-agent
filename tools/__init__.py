@@ -35,6 +35,7 @@ from tools.university_scraper_tool import (
     scrape_official_university_admissions,
     official_site_subgraph
 )
+from tools.reviews_tool import fetch_university_reviews
 
 __all__ = [
     "scrape_studyportals",
@@ -63,5 +64,6 @@ __all__ = [
     "get_univs_addresses",
     "UNIVS_ADDRESSES",
     "scrape_official_university_admissions",
-    "official_site_subgraph"
+    "official_site_subgraph",
+    "fetch_university_reviews"
 ]

@@ -366,7 +366,16 @@ async function executeStreamingSearch(payload, stepIds) {
                 if (line.startsWith("data: ")) {
                     const eventData = JSON.parse(line.substring(6));
 
-                    if (eventData.type === "step") {
+                    if (eventData.type === "agent_event") {
+                        const pill = document.getElementById(`agent-pill-${eventData.node}`);
+                        if (pill) {
+                            pill.style.background = "rgba(16, 185, 129, 0.22)";
+                            pill.style.border = "1px solid rgba(16, 185, 129, 0.5)";
+                            pill.style.color = "#A7F3D0";
+                            pill.textContent = `✅ ${eventData.label}`;
+                            pill.title = eventData.summary || "";
+                        }
+                    } else if (eventData.type === "step") {
                         if (stepIdx < stepIds.length) {
                             if (stepIdx > 0) {
                                 document.getElementById(stepIds[stepIdx - 1]).classList.remove("active");
