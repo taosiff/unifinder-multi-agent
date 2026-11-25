@@ -40,6 +40,10 @@ from tools.mastersportal_tool import scrape_studyportals
 from tools.univs_tool import search_univs_programs
 from tools.university_scraper_tool import scrape_official_university_admissions
 from tools.reviews_tool import fetch_university_reviews
+from tools.country_job_intel_tool import (
+    fetch_country_student_intelligence,
+    fetch_subject_job_market_intel
+)
 from tools.web_intelligence import search_web_knowledge
 from tools.pr_visa_tool import evaluate_immigration_pathway
 from tools.career_roi_tool import calculate_roi_and_career_outlook
@@ -148,6 +152,8 @@ class UniFinderState(TypedDict):
     web_search_results: str
     official_admissions_scraped: List[Dict[str, Any]]
     university_reviews: List[Dict[str, Any]]
+    country_intel: Dict[str, Any]
+    subject_job_market: Dict[str, Any]
     # Assessment & Opportunity outputs
     eligibility_analysis: Dict[str, Any]
     financial_analysis: Dict[str, Any]
@@ -379,6 +385,28 @@ def reddit_reviews_node(state: UniFinderState):
     }
 
 
+def country_intel_node(state: UniFinderState):
+    """Parallel Agent: Researches target country economics, PR rules & student-friendliness."""
+    country = state.get("country_pref") or "Germany"
+    intel = fetch_country_student_intelligence(country=country)
+    return {
+        "country_intel": intel,
+        "messages": [AIMessage(content=f"Country & Economy Agent: Analyzed economics, student-friendliness & PR for {country}.")]
+    }
+
+
+def subject_job_market_node(state: UniFinderState):
+    """Parallel Agent: Researches subject job demand & post-study sponsored visa reality."""
+    country = state.get("country_pref") or "Germany"
+    subject = state.get("subject") or "Computer Science"
+    degree = state.get("degree_level") or "MSc"
+    job_intel = fetch_subject_job_market_intel(country=country, subject=subject, degree_level=degree)
+    return {
+        "subject_job_market": job_intel,
+        "messages": [AIMessage(content=f"Job & Sponsored Visa Agent: Analyzed {subject} job market & sponsorship in {country}.")]
+    }
+
+
 # ==========================================
 # Subgraph 3B: Official University Website & Admissions Scraper Subgraph
 # ==========================================
@@ -511,6 +539,8 @@ def synthesis_counselor_node(state: UniFinderState):
     univs_live = state.get("univs_catalogue_results", [])
     official_scraped = state.get("official_admissions_scraped", [])
     uni_reviews = state.get("university_reviews", [])
+    country_intel = state.get("country_intel", {})
+    job_market = state.get("subject_job_market", {})
     web_search = state.get("web_search_results", "")
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
@@ -548,6 +578,12 @@ OFFICIAL UNIVERSITY WEBSITE SCRAPED ADMISSIONS (TUITION, IELTS/TOEFL, GPA, DEADL
 
 STUDENT & ALUMNI REVIEWS (REDDIT & FORUMS):
 {json.dumps(uni_reviews, indent=2, default=str)}
+
+COUNTRY ECONOMICS, STUDENT-FRIENDLINESS & PR OVERVIEW:
+{json.dumps(country_intel, indent=2, default=str)}
+
+SUBJECT JOB CONDITIONS & AFTER-STUDY SPONSORED VISA REALITY:
+{json.dumps(job_market, indent=2, default=str)}
 
 LIVE WEB INTELLIGENCE (DUCKDUCKGO / GOOGLE PARALLEL SEARCH):
 {web_search[:1200] if web_search else "N/A"}
@@ -613,6 +649,8 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
     univs_live = state.get("univs_catalogue_results", [])
     official_scraped = state.get("official_admissions_scraped", [])
     uni_reviews = state.get("university_reviews", [])
+    country_intel = state.get("country_intel", {})
+    job_market = state.get("subject_job_market", {})
     web_search = state.get("web_search_results", "")
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
@@ -737,16 +775,18 @@ def create_unifinder_graph():
     graph.add_node("agent_db_search", agent_db_search_node)
     graph.add_node("merge_discovery", merge_discovery_node)
 
-    # Stage 2: 4 Parallel Enrichment Agent Nodes
+    # Stage 2: 6 Parallel Enrichment Agent Nodes
     graph.add_node("agent_official_admissions", official_site_admissions_node)
     graph.add_node("agent_reddit_reviews", reddit_reviews_node)
     graph.add_node("agent_scholarship_finder", opportunities_subgraph_node)
     graph.add_node("agent_assessment_visa", assessment_and_visa_node)
+    graph.add_node("agent_country_intel", country_intel_node)
+    graph.add_node("agent_subject_job_market", subject_job_market_node)
 
     # Stage 3: Final Answer Generator Agent Node
     graph.add_node("answer_generator", synthesis_counselor_node)
 
-    # Wiring: Sequential Entry -> 4-Way Parallel Search -> Fan-In -> 4-Way Parallel Enrichment -> Answer Generator
+    # Wiring: Sequential Entry -> 4-Way Parallel Search -> Fan-In -> 6-Way Parallel Enrichment -> Answer Generator
     graph.add_edge(START, "intent_safety")
     graph.add_edge("intent_safety", "crag_retrieval")
     graph.add_edge("crag_retrieval", "cv_profile_extractor")
@@ -766,6 +806,8 @@ def create_unifinder_graph():
         "agent_reddit_reviews",
         "agent_scholarship_finder",
         "agent_assessment_visa",
+        "agent_country_intel",
+        "agent_subject_job_market",
     ]
     for ea in enrichment_agents:
         graph.add_edge("merge_discovery", ea)
@@ -829,6 +871,8 @@ def run_unifinder_agent(
         "web_search_results": "",
         "official_admissions_scraped": [],
         "university_reviews": [],
+        "country_intel": {},
+        "subject_job_market": {},
         "eligibility_analysis": {},
         "financial_analysis": {},
         "immigration_analysis": {},
@@ -855,6 +899,8 @@ def run_unifinder_agent(
         "web_search_results": result.get("web_search_results", ""),
         "official_admissions_scraped": result.get("official_admissions_scraped", []),
         "university_reviews": result.get("university_reviews", []),
+        "country_intel": result.get("country_intel", {}),
+        "subject_job_market": result.get("subject_job_market", {}),
         "eligibility_analysis": result.get("eligibility_analysis", {}),
         "immigration_analysis": result.get("immigration_analysis", {}),
         "career_roi_analysis": result.get("career_roi_analysis", {}),
@@ -926,6 +972,8 @@ async def run_unifinder_agent_stream(
         "web_search_results": "",
         "official_admissions_scraped": [],
         "university_reviews": [],
+        "country_intel": {},
+        "subject_job_market": {},
         "eligibility_analysis": {},
         "financial_analysis": {},
         "immigration_analysis": {},
@@ -953,6 +1001,8 @@ async def run_unifinder_agent_stream(
         "agent_reddit_reviews": ("2", "Reddit & Student Reviews Agent"),
         "agent_scholarship_finder": ("2", "Scholarship Finder Agent"),
         "agent_assessment_visa": ("2", "PR, Living Cost & ROI Agent"),
+        "agent_country_intel": ("2", "Country Economy & Student Agent"),
+        "agent_subject_job_market": ("2", "Job Market & Sponsored Visa Agent"),
         "answer_generator": ("3", "Answer Generator Agent"),
     }
 
@@ -1007,6 +1057,8 @@ async def run_unifinder_agent_stream(
         "web_search_results": accumulated.get("web_search_results", ""),
         "official_admissions_scraped": accumulated.get("official_admissions_scraped", []),
         "university_reviews": accumulated.get("university_reviews", []),
+        "country_intel": accumulated.get("country_intel", {}),
+        "subject_job_market": accumulated.get("subject_job_market", {}),
         "eligibility_analysis": accumulated.get("eligibility_analysis", {}),
         "immigration_analysis": accumulated.get("immigration_analysis", {}),
         "career_roi_analysis": accumulated.get("career_roi_analysis", {}),

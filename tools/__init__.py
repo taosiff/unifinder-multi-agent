@@ -36,6 +36,10 @@ from tools.university_scraper_tool import (
     official_site_subgraph
 )
 from tools.reviews_tool import fetch_university_reviews
+from tools.country_job_intel_tool import (
+    fetch_country_student_intelligence,
+    fetch_subject_job_market_intel
+)
 
 __all__ = [
     "scrape_studyportals",
@@ -65,5 +69,7 @@ __all__ = [
     "UNIVS_ADDRESSES",
     "scrape_official_university_admissions",
     "official_site_subgraph",
-    "fetch_university_reviews"
+    "fetch_university_reviews",
+    "fetch_country_student_intelligence",
+    "fetch_subject_job_market_intel"
 ]
