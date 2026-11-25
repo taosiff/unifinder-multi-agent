@@ -30,6 +30,10 @@ from tools.univs_tool import (
     get_univs_addresses,
     UNIVS_ADDRESSES
 )
+from tools.university_scraper_tool import (
+    scrape_official_university_admissions,
+    official_site_subgraph
+)
 
 __all__ = [
     "scrape_studyportals",
@@ -55,5 +59,7 @@ __all__ = [
     "search_univs_programs",
     "search_univs_institutes",
     "get_univs_addresses",
-    "UNIVS_ADDRESSES"
+    "UNIVS_ADDRESSES",
+    "scrape_official_university_admissions",
+    "official_site_subgraph"
 ]

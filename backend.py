@@ -38,6 +38,7 @@ from concurrent.futures import ThreadPoolExecutor
 from database import search_universities
 from tools.mastersportal_tool import scrape_studyportals
 from tools.univs_tool import search_univs_programs
+from tools.university_scraper_tool import scrape_official_university_admissions
 from tools.web_intelligence import search_web_knowledge
 from tools.pr_visa_tool import evaluate_immigration_pathway
 from tools.career_roi_tool import calculate_roi_and_career_outlook
@@ -134,6 +135,7 @@ class UniFinderState(TypedDict):
     portal_scraping_result: Dict[str, Any]
     univs_catalogue_results: List[Dict[str, Any]]
     web_search_results: str
+    official_admissions_scraped: List[Dict[str, Any]]
     # Assessment & Opportunity outputs
     eligibility_analysis: Dict[str, Any]
     financial_analysis: Dict[str, Any]
@@ -269,6 +271,41 @@ def discovery_subgraph_node(state: UniFinderState):
 
 
 # ==========================================
+# Subgraph 3B: Official University Website & Admissions Scraper Subgraph
+# ==========================================
+
+def official_site_admissions_node(state: UniFinderState):
+    unis = state.get("discovered_universities", [])
+    degree = state.get("degree_level", "MSc")
+    subject = state.get("subject", "Computer Science")
+
+    targets = unis[:2]
+    scraped_list: List[Dict[str, Any]] = []
+
+    if targets:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [
+                executor.submit(
+                    scrape_official_university_admissions,
+                    university_name=u.get("name", ""),
+                    official_url=u.get("website", ""),
+                    degree_level=degree,
+                    subject=subject
+                )
+                for u in targets
+            ]
+            for fut in futures:
+                res = fut.result()
+                if res.get("success") and res.get("data"):
+                    scraped_list.append(res["data"])
+
+    return {
+        "official_admissions_scraped": scraped_list,
+        "messages": [AIMessage(content=f"Official Website Scraper Subgraph: Extracted tuition, IELTS/TOEFL, GPA, and deadlines for {len(scraped_list)} institutions.")]
+    }
+
+
+# ==========================================
 # Subgraph 4: Opportunities & Live News Subgraph
 # ==========================================
 
@@ -363,6 +400,7 @@ def synthesis_counselor_node(state: UniFinderState):
     user_query = state["user_query"]
     unis = state.get("discovered_universities", [])
     univs_live = state.get("univs_catalogue_results", [])
+    official_scraped = state.get("official_admissions_scraped", [])
     web_search = state.get("web_search_results", "")
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
@@ -392,6 +430,9 @@ DISCOVERED UNIVERSITIES (CURATED DATABASE):
 
 LIVE UNIVS.COM CATALOGUE MATCHES (22,900+ INSTITUTES):
 {json.dumps(univs_live[:5], indent=2, default=str)}
+
+OFFICIAL UNIVERSITY WEBSITE SCRAPED ADMISSIONS (TUITION, IELTS/TOEFL, GPA, DEADLINES, INTAKES & PROGRAMS):
+{json.dumps(official_scraped, indent=2, default=str)}
 
 LIVE WEB INTELLIGENCE (DUCKDUCKGO / GOOGLE PARALLEL SEARCH):
 {web_search[:1200] if web_search else "N/A"}
@@ -455,6 +496,7 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
     country = state.get("country_pref") or "Global Destinations"
     unis = state.get("discovered_universities", [])
     univs_live = state.get("univs_catalogue_results", [])
+    official_scraped = state.get("official_admissions_scraped", [])
     web_search = state.get("web_search_results", "")
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
@@ -570,6 +612,7 @@ def create_unifinder_graph():
     graph.add_node("intent_safety", intent_safety_node)
     graph.add_node("crag_retrieval", crag_retrieval_node)
     graph.add_node("discovery_subgraph", discovery_subgraph_node)
+    graph.add_node("official_site_admissions", official_site_admissions_node)
     graph.add_node("opportunities_subgraph", opportunities_subgraph_node)
     graph.add_node("assessment_and_visa", assessment_and_visa_node)
     graph.add_node("synthesis_counselor", synthesis_counselor_node)
@@ -577,7 +620,8 @@ def create_unifinder_graph():
     graph.add_edge(START, "intent_safety")
     graph.add_edge("intent_safety", "crag_retrieval")
     graph.add_edge("crag_retrieval", "discovery_subgraph")
-    graph.add_edge("discovery_subgraph", "opportunities_subgraph")
+    graph.add_edge("discovery_subgraph", "official_site_admissions")
+    graph.add_edge("official_site_admissions", "opportunities_subgraph")
     graph.add_edge("opportunities_subgraph", "assessment_and_visa")
     graph.add_edge("assessment_and_visa", "synthesis_counselor")
     graph.add_edge("synthesis_counselor", END)
@@ -635,6 +679,7 @@ def run_unifinder_agent(
         "portal_scraping_result": {},
         "univs_catalogue_results": [],
         "web_search_results": "",
+        "official_admissions_scraped": [],
         "eligibility_analysis": {},
         "financial_analysis": {},
         "immigration_analysis": {},
@@ -659,6 +704,7 @@ def run_unifinder_agent(
         "portal_scraping_result": result.get("portal_scraping_result", {}),
         "univs_catalogue_results": result.get("univs_catalogue_results", []),
         "web_search_results": result.get("web_search_results", ""),
+        "official_admissions_scraped": result.get("official_admissions_scraped", []),
         "eligibility_analysis": result.get("eligibility_analysis", {}),
         "immigration_analysis": result.get("immigration_analysis", {}),
         "career_roi_analysis": result.get("career_roi_analysis", {}),

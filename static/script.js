@@ -1088,3 +1088,72 @@ async function searchUnivsLive() {
         container.innerHTML = `<div class="alert-box error">Error fetching Univs.com catalogue: ${e.message}</div>`;
     }
 }
+
+// ==========================================
+// Official University Website Scraper Subgraph
+// ==========================================
+async function scrapeOfficialUniversity() {
+    const uniName = document.getElementById("scrapeUniName")?.value.trim() || "";
+    const uniUrl = document.getElementById("scrapeUniUrl")?.value.trim() || "";
+    const subject = document.getElementById("scrapeSubject")?.value.trim() || "Computer Science";
+    const container = document.getElementById("scrapeResultsContainer");
+
+    if (!container) return;
+    if (!uniName && !uniUrl) {
+        container.innerHTML = `<div class="alert-box error">Please enter a university name or official website URL.</div>`;
+        return;
+    }
+
+    container.innerHTML = `<div style="color:var(--text-muted); padding:0.5rem;">⏳ Running Official Website Admissions Scraper Subgraph (crawling main site &amp; admissions subpages)...</div>`;
+
+    try {
+        const res = await fetch("/api/scrape-university", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                university_name: uniName,
+                official_url: uniUrl,
+                degree_level: selectedDegree || "MSc",
+                subject: subject
+            })
+        });
+        const payload = await res.json();
+        if (!payload.success || !payload.data) {
+            container.innerHTML = `<div class="alert-box error">Scrape failed: ${payload.error || "Unknown error"}</div>`;
+            return;
+        }
+
+        const d = payload.data;
+        const listItems = (arr) => (arr && arr.length ? arr.map(x => `<li>${x}</li>`).join("") : "<li>Not specified on scraped pages</li>");
+
+        container.innerHTML = `
+            <div class="opps-grid">
+                <div class="opp-card">
+                    <div>
+                        <div class="opp-card-header">
+                            <h4>${d.university_name || uniName}</h4>
+                            <span class="opp-funding-tag">${(d.pages_scraped || []).length} Pages Scraped</span>
+                        </div>
+                        <div class="opp-detail-row">🌐 <a href="${d.official_url}" target="_blank">${d.official_url}</a></div>
+                        <div class="opp-detail-row"><strong>💰 Tuition Extracted:</strong><ul style="margin:0.3rem 0 0 1.2rem;">${listItems(d.tuition)}</ul></div>
+                        <div class="opp-detail-row"><strong>🗣️ IELTS / TOEFL Requirements:</strong><ul style="margin:0.3rem 0 0 1.2rem;">${listItems(d.english_requirements)}</ul></div>
+                        <div class="opp-detail-row"><strong>📊 GPA Requirements:</strong><ul style="margin:0.3rem 0 0 1.2rem;">${listItems(d.gpa_requirements)}</ul></div>
+                    </div>
+                </div>
+                <div class="opp-card">
+                    <div>
+                        <div class="opp-card-header">
+                            <h4>Deadlines, Intakes &amp; Programs</h4>
+                            <span class="purple-pill">Official Site Extract</span>
+                        </div>
+                        <div class="opp-detail-row"><strong>📅 Intakes:</strong><ul style="margin:0.3rem 0 0 1.2rem;">${listItems(d.intakes)}</ul></div>
+                        <div class="opp-detail-row"><strong>⏰ Deadlines:</strong><ul style="margin:0.3rem 0 0 1.2rem;">${listItems(d.deadlines)}</ul></div>
+                        <div class="opp-detail-row"><strong>🎓 Scraped Programs:</strong><ul style="margin:0.3rem 0 0 1.2rem;">${listItems(d.programs)}</ul></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = `<div class="alert-box error">Error running scraper: ${e.message}</div>`;
+    }
+}

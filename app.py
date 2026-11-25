@@ -37,6 +37,7 @@ from tools.sop_reviewer_tool import review_statement_of_purpose
 from tools.rag_engine import index_user_document, get_session_documents
 from tools.opportunities_tool import get_live_opportunities, get_immigration_news
 from tools.univs_tool import search_univs_programs, search_univs_institutes, get_univs_addresses
+from tools.university_scraper_tool import scrape_official_university_admissions
 
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
@@ -99,6 +100,13 @@ class ThreadCreateRequest(BaseModel):
 class HITLActionRequest(BaseModel):
     thread_id: str
     decision: str  # e.g. "approved", "include_safety", "modify_budget"
+
+
+class ScrapeUniversityRequest(BaseModel):
+    university_name: Optional[str] = ""
+    official_url: Optional[str] = ""
+    degree_level: Optional[str] = "MSc"
+    subject: Optional[str] = "Computer Science"
     notes: Optional[str] = ""
 
 
@@ -373,6 +381,19 @@ async def univs_programs(
 @app.get("/api/univs/institutes")
 async def univs_institutes(q: str = "", country: str = "", page: int = 1):
     return search_univs_institutes(query=q, country=country, page=page)
+
+
+@app.post("/api/scrape-university")
+async def scrape_university_endpoint(req: ScrapeUniversityRequest):
+    """Runs the Official Website Admissions Scraper LangGraph subgraph."""
+    if not req.university_name and not req.official_url:
+        return JSONResponse(status_code=400, content={"success": False, "error": "Provide a university name or official URL."})
+    return scrape_official_university_admissions(
+        university_name=req.university_name or "",
+        official_url=req.official_url or "",
+        degree_level=req.degree_level or "MSc",
+        subject=req.subject or "Computer Science"
+    )
 
 
 @app.post("/api/shortlist")

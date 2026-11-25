@@ -2277,6 +2277,23 @@ a:hover {
                         </div>
                     </details>
                 </div>
+
+                <!-- Official University Website & Admissions Scraper Subgraph -->
+                <div class="sidebar-card" style="margin-top: 2rem;">
+                    <div class="card-header-bar">
+                        <h3>🕸️ Official University Website Admissions Scraper (LangGraph Subgraph)</h3>
+                        <span class="purple-pill">Tuition • IELTS/TOEFL • GPA • Deadlines • Programs</span>
+                    </div>
+                    <div class="filter-bar" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.2rem;">
+                        <input type="text" id="scrapeUniName" placeholder="University name (e.g. Technical University of Munich, ETH Zurich)" value="Technical University of Munich" style="flex:1.5; min-width:220px; padding:0.65rem 0.9rem; border:1.5px solid var(--sand-200); border-radius:8px;">
+                        <input type="url" id="scrapeUniUrl" placeholder="Or paste official URL (e.g. https://www.tum.de/en/)" style="flex:1.5; min-width:220px; padding:0.65rem 0.9rem; border:1.5px solid var(--sand-200); border-radius:8px;">
+                        <input type="text" id="scrapeSubject" placeholder="Subject" value="Computer Science" style="flex:1; min-width:140px; padding:0.65rem 0.9rem; border:1.5px solid var(--sand-200); border-radius:8px;">
+                        <button class="primary-btn" onclick="scrapeOfficialUniversity()" style="padding:0.65rem 1.25rem;">🕸️ Scrape Admissions</button>
+                    </div>
+                    <div id="scrapeResultsContainer">
+                        <div style="color:var(--text-muted); font-size:0.88rem;">Enter a university name or official website URL to crawl its admissions &amp; programs pages and extract tuition, IELTS/TOEFL, GPA, deadlines, intakes, and programs.</div>
+                    </div>
+                </div>
             </section>
 
             <!-- ==============================================
