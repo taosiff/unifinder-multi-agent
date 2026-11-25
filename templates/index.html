@@ -1874,10 +1874,17 @@ a:hover {
                 <button class="sidebar-close-btn" onclick="toggleThreadSidebar()" title="Close Drawer">✕</button>
             </div>
 
-            <div class="sidebar-header">
+            <div class="sidebar-header" style="display:flex; flex-direction:column; gap:0.55rem;">
                 <button class="new-chat-btn" onclick="createNewThread()">
                     <span>➕ New Counseling Session</span>
                 </button>
+                <button class="end-wipe-btn" onclick="endAndWipeSession()" title="Exit chat and remove all personal data, CVs & threads from the database" style="width:100%; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.45); color:#FCA5A5; padding:0.6rem 0.9rem; border-radius:10px; font-weight:600; font-size:0.8rem; cursor:pointer; transition:all 0.2s;">
+                    🚪 End Chat &amp; Wipe DB Data
+                </button>
+                <label style="display:flex; align-items:center; gap:0.45rem; font-size:0.74rem; color:var(--sand-300); cursor:pointer; padding:0.2rem 0.1rem;">
+                    <input type="checkbox" id="autoWipeOnExit" onchange="toggleAutoWipe(this.checked)">
+                    <span>Auto-wipe personal data on tab exit</span>
+                </label>
             </div>
 
             <div class="thread-section-label">Past Conversations</div>

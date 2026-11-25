@@ -3,13 +3,14 @@
  * Multi-Agent Subgraphs • C-RAG • Persistent SqliteSaver Memory • Live Streaming • HITL
  */
 
-// Global State
+// Global State (1-to-1 Chat Thread & Session ID)
 let currentThreadId = localStorage.getItem("unifinder_thread_id") || `student_${Math.random().toString(36).substring(2, 9)}`;
-let currentSessionId = localStorage.getItem("unifinder_session_id") || `session_${Math.random().toString(36).substring(2, 9)}`;
+let currentSessionId = currentThreadId;
 let selectedDegree = "MSc";
 let activeProvider = localStorage.getItem("unifinder_llm_provider") || "gemini";
 let storedApiKey = localStorage.getItem("unifinder_api_key") || "";
 let storedLangsmithKey = localStorage.getItem("unifinder_langsmith_key") || "";
+let autoWipeEnabled = localStorage.getItem("unifinder_auto_wipe") === "true";
 
 localStorage.setItem("unifinder_thread_id", currentThreadId);
 localStorage.setItem("unifinder_session_id", currentSessionId);
@@ -25,6 +26,42 @@ document.addEventListener("DOMContentLoaded", () => {
     loadShortlist();
     loadOpportunities();
     recalculateROI();
+    const autoWipeEl = document.getElementById("autoWipeOnExit");
+    if (autoWipeEl) autoWipeEl.checked = autoWipeEnabled;
+});
+
+function toggleAutoWipe(enabled) {
+    autoWipeEnabled = !!enabled;
+    localStorage.setItem("unifinder_auto_wipe", autoWipeEnabled ? "true" : "false");
+    showToast(autoWipeEnabled ? "Auto-wipe on tab exit enabled." : "Auto-wipe on tab exit disabled.");
+}
+
+async function endAndWipeSession() {
+    try {
+        await fetch("/api/session/end", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ thread_id: currentThreadId, session_id: currentSessionId })
+        });
+    } catch (e) {
+        console.error("Session wipe error:", e);
+    }
+
+    const feedback = document.getElementById("uploadFeedback");
+    if (feedback) {
+        feedback.textContent = "";
+        feedback.classList.add("hidden");
+    }
+    createNewThread();
+    loadShortlist();
+    showToast("🧹 Session ended! Personal data, CVs & thread wiped from database.");
+}
+
+window.addEventListener("pagehide", () => {
+    if (autoWipeEnabled && currentThreadId) {
+        const payload = JSON.stringify({ thread_id: currentThreadId, session_id: currentSessionId });
+        navigator.sendBeacon("/api/session/end", new Blob([payload], { type: "application/json" }));
+    }
 });
 
 // ==========================================

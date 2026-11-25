@@ -31,10 +31,11 @@ from database import (
     remove_from_shortlist,
     get_or_create_thread,
     list_chat_threads,
-    delete_chat_thread
+    delete_chat_thread,
+    purge_session_data
 )
 from tools.sop_reviewer_tool import review_statement_of_purpose
-from tools.rag_engine import index_user_document, get_session_documents
+from tools.rag_engine import index_user_document, get_session_documents, clear_session_memory
 from tools.opportunities_tool import get_live_opportunities, get_immigration_news, get_scholarship_sources
 from tools.univs_tool import search_univs_programs, search_univs_institutes, get_univs_addresses
 from tools.university_scraper_tool import scrape_official_university_admissions
@@ -326,7 +327,35 @@ async def create_thread(req: ThreadCreateRequest):
 @app.delete("/api/threads/{thread_id}")
 async def delete_thread(thread_id: str):
     ok = delete_chat_thread(thread_id)
+    clear_session_memory(thread_id)
     return {"success": ok}
+
+
+@app.post("/api/session/end")
+async def end_and_wipe_session(request: Request):
+    """
+    Ends the current chat session and purges all personal data (chat thread,
+    uploaded CVs/documents, shortlists, and LangGraph checkpoints) from the database.
+    Supports both fetch JSON and navigator.sendBeacon payloads.
+    """
+    try:
+        raw = await request.body()
+        import json as _json
+        data = _json.loads(raw.decode("utf-8")) if raw else {}
+    except Exception:
+        data = {}
+
+    thread_id = data.get("thread_id", "")
+    session_id = data.get("session_id", "") or thread_id
+    if not thread_id and not session_id:
+        return {"success": False, "error": "Missing thread_id or session_id"}
+
+    counts = purge_session_data(thread_id=thread_id or session_id, session_id=session_id)
+    clear_session_memory(session_id)
+    if thread_id and thread_id != session_id:
+        clear_session_memory(thread_id)
+
+    return {"success": True, "purged": counts}
 
 
 @app.post("/api/hitl-action")

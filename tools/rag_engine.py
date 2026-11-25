@@ -262,3 +262,8 @@ def get_session_documents(session_id: str) -> List[str]:
             seen.add(d)
             result.append(d)
     return result
+
+
+def clear_session_memory(session_id: str) -> None:
+    """Clears in-memory cached document chunks for a session."""
+    SESSION_DOCUMENT_STORE.pop(session_id, None)

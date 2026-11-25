@@ -573,15 +573,53 @@ def list_chat_threads(limit: int = 20) -> List[Dict[str, Any]]:
 
 
 def delete_chat_thread(thread_id: str) -> bool:
+    res = purge_session_data(thread_id=thread_id, session_id=thread_id)
+    return res.get("deleted_threads", 0) > 0 or res.get("total_deleted", 0) > 0
+
+
+def purge_session_data(thread_id: str, session_id: Optional[str] = None) -> Dict[str, int]:
+    """
+    Completely removes all personal & session data (chat thread, uploaded CVs/documents,
+    shortlists, and LangGraph checkpoint memory) from the online PostgreSQL / local SQLite DB.
+    """
+    sid = session_id or thread_id
     conn = get_db_connection()
     cursor = conn.cursor()
     ph = "%s" if is_postgres() else "?"
-    cursor.execute(f"DELETE FROM chat_threads WHERE thread_id = {ph}", (thread_id,))
-    affected = cursor.rowcount
-    if not is_postgres():
-        conn.commit()
-    conn.close()
-    return affected > 0
+
+    counts = {
+        "deleted_threads": 0,
+        "deleted_documents": 0,
+        "deleted_shortlists": 0,
+        "deleted_checkpoints": 0
+    }
+
+    try:
+        cursor.execute(f"DELETE FROM chat_threads WHERE thread_id = {ph}", (thread_id,))
+        counts["deleted_threads"] = cursor.rowcount or 0
+
+        cursor.execute(f"DELETE FROM session_documents WHERE session_id = {ph} OR session_id = {ph}", (sid, thread_id))
+        counts["deleted_documents"] = cursor.rowcount or 0
+
+        cursor.execute(f"DELETE FROM user_shortlists WHERE session_id = {ph} OR session_id = {ph}", (sid, thread_id))
+        counts["deleted_shortlists"] = cursor.rowcount or 0
+
+        # Purge LangGraph checkpointer tables for this thread_id
+        lg_tables = ["checkpoint_writes", "checkpoint_blobs", "checkpoints"] if is_postgres() else ["writes", "checkpoints"]
+        for tbl in lg_tables:
+            try:
+                cursor.execute(f"DELETE FROM {tbl} WHERE thread_id = {ph}", (thread_id,))
+                counts["deleted_checkpoints"] += (cursor.rowcount or 0)
+            except Exception:
+                pass
+
+        if not is_postgres():
+            conn.commit()
+    finally:
+        conn.close()
+
+    counts["total_deleted"] = sum(counts.values())
+    return counts
 
 
 def save_session_document(session_id: str, doc_name: str, chunks: List[Dict[str, Any]], profile_hints: Dict[str, Any]) -> bool:
