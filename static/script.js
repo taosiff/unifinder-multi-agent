@@ -82,6 +82,15 @@ function toggleThreadSidebar() {
     }
 }
 
+function toggleMobileProfile() {
+    const card = document.getElementById("profileFilterCard");
+    const arrow = document.getElementById("mobileProfileArrow");
+    if (card) {
+        const collapsed = card.classList.toggle("mobile-collapsed");
+        if (arrow) arrow.textContent = collapsed ? "Show ▾" : "Hide ▴";
+    }
+}
+
 async function loadThreadsList() {
     try {
         const res = await fetch("/api/threads");
