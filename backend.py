@@ -35,7 +35,7 @@ from langchain_groq import ChatGroq
 
 # Internal Tools, Database & RAG
 from concurrent.futures import ThreadPoolExecutor
-from database import search_universities
+from database import search_universities, save_chat_message
 from tools.mastersportal_tool import scrape_studyportals
 from tools.univs_tool import search_univs_programs
 from tools.university_scraper_tool import scrape_official_university_admissions
@@ -542,6 +542,15 @@ def synthesis_counselor_node(state: UniFinderState):
     country_intel = state.get("country_intel", {})
     job_market = state.get("subject_job_market", {})
     web_search = state.get("web_search_results", "")
+
+    # Include recent conversation turns from checkpointer memory for follow-up continuity
+    prior_turns = []
+    for m in (state.get("messages") or [])[-8:]:
+        if isinstance(m, HumanMessage):
+            prior_turns.append(f"User: {m.content[:250]}")
+        elif isinstance(m, AIMessage) and len(m.content) > 120:
+            prior_turns.append(f"Assistant (prev): {m.content[:300]}...")
+    history_block = "\n".join(prior_turns[:-1]) if len(prior_turns) > 1 else ""
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
     career = state.get("career_roi_analysis", {})
@@ -556,6 +565,8 @@ Synthesize the structured analysis below into an authoritative, inspiring, and a
 
 USER REQUEST:
 "{user_query}"
+
+{f"CONVERSATION HISTORY (FOLLOW-UP CONTEXT):\n{history_block}\n" if history_block else ""}
 
 STUDENT PROFILE CONSTRAINTS:
 - Degree Level: {state.get('degree_level')}
@@ -652,6 +663,15 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
     country_intel = state.get("country_intel", {})
     job_market = state.get("subject_job_market", {})
     web_search = state.get("web_search_results", "")
+
+    # Include recent conversation turns from checkpointer memory for follow-up continuity
+    prior_turns = []
+    for m in (state.get("messages") or [])[-8:]:
+        if isinstance(m, HumanMessage):
+            prior_turns.append(f"User: {m.content[:250]}")
+        elif isinstance(m, AIMessage) and len(m.content) > 120:
+            prior_turns.append(f"Assistant (prev): {m.content[:300]}...")
+    history_block = "\n".join(prior_turns[:-1]) if len(prior_turns) > 1 else ""
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
     career = state.get("career_roi_analysis", {})
@@ -888,6 +908,10 @@ def run_unifinder_agent(
     }
 
     result = unifinder_graph.invoke(initial_state, config=config)
+    dossier = result.get("dossier_markdown", "")
+    save_chat_message(thread_id, "user", user_input)
+    if dossier:
+        save_chat_message(thread_id, "assistant", dossier)
 
     return {
         "thread_id": thread_id,
@@ -988,25 +1012,28 @@ async def run_unifinder_agent_stream(
         "llm_calls": 0
     }
 
-    node_labels = {
-        "intent_safety": ("0", "Security Guardrail"),
-        "crag_retrieval": ("0", "C-RAG Document Evaluator"),
-        "cv_profile_extractor": ("0", "CV Profile Extractor"),
-        "agent_univs_search": ("1", "Univs.com Search Agent"),
-        "agent_studyportals_scraper": ("1", "StudyPortals Scraper Agent"),
-        "agent_web_search": ("1", "Web Search Agent"),
-        "agent_db_search": ("1", "Curated DB Agent"),
-        "merge_discovery": ("1", "Search Fan-In Sync"),
-        "agent_official_admissions": ("2", "Official Website Admissions Agent"),
-        "agent_reddit_reviews": ("2", "Reddit & Student Reviews Agent"),
-        "agent_scholarship_finder": ("2", "Scholarship Finder Agent"),
-        "agent_assessment_visa": ("2", "PR, Living Cost & ROI Agent"),
-        "agent_country_intel": ("2", "Country Economy & Student Agent"),
-        "agent_subject_job_market": ("2", "Job Market & Sponsored Visa Agent"),
-        "answer_generator": ("3", "Answer Generator Agent"),
+    # High-level, clean status phases (keeps internal tools discreet)
+    phase_map = {
+        "intent_safety": "Analyzing your profile & goals...",
+        "crag_retrieval": "Reviewing your uploaded documents...",
+        "cv_profile_extractor": "Matching profile criteria...",
+        "agent_univs_search": "Exploring global universities & programs...",
+        "agent_studyportals_scraper": "Exploring global universities & programs...",
+        "agent_web_search": "Exploring global universities & programs...",
+        "agent_db_search": "Exploring global universities & programs...",
+        "merge_discovery": "Shortlisting top institutions...",
+        "agent_official_admissions": "Checking admissions, costs & deadlines...",
+        "agent_reddit_reviews": "Checking student experiences & reviews...",
+        "agent_scholarship_finder": "Checking scholarships & funding...",
+        "agent_assessment_visa": "Evaluating visas, living costs & ROI...",
+        "agent_country_intel": "Evaluating country & PR pathways...",
+        "agent_subject_job_market": "Evaluating career & job outlook...",
+        "answer_generator": "Writing your tailored recommendation...",
     }
 
+    save_chat_message(thread_id, "user", user_input)
     accumulated: Dict[str, Any] = dict(initial_state)
+    last_phase = ""
     queue: asyncio.Queue = asyncio.Queue()
     loop = asyncio.get_running_loop()
 
@@ -1033,14 +1060,14 @@ async def run_unifinder_agent_stream(
                     if k != "messages":
                         accumulated[k] = v
 
-                stage, label = node_labels.get(node_name, ("1", node_name))
-                msgs = node_out.get("messages") or []
-                summary = msgs[-1].content if msgs else f"{label} completed."
-
-                yield f"data: {json.dumps({'type': 'agent_event', 'node': node_name, 'stage': stage, 'label': label, 'status': 'completed', 'summary': summary})}\n\n"
-                yield f"data: {json.dumps({'type': 'step', 'step': label, 'status': 'completed'})}\n\n"
+                phase_text = phase_map.get(node_name, "Researching...")
+                if phase_text != last_phase:
+                    last_phase = phase_text
+                    yield f"data: {json.dumps({'type': 'phase', 'text': phase_text})}\n\n"
 
     dossier = accumulated.get("dossier_markdown", "")
+    if dossier:
+        save_chat_message(thread_id, "assistant", dossier)
     chunk_size = 45
     for i in range(0, len(dossier), chunk_size):
         chunk = dossier[i:i + chunk_size]

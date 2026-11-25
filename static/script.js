@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateNavKeyStatus();
     checkLangsmithStatus();
     loadThreadsList();
+    loadThreadMessages(currentThreadId);
     loadSessionDocs();
     loadMatrixTable();
     loadShortlist();
@@ -99,10 +100,95 @@ function renderThreadsList(threads) {
 
     container.innerHTML = threads.map(t => `
         <div class="thread-item ${t.thread_id === currentThreadId ? 'active' : ''}" onclick="switchThread('${t.thread_id}', '${escapeQuote(t.title)}')">
-            <span class="thread-title-text" title="${t.title}">💬 ${t.title}</span>
+            <span class="thread-title-text" title="${t.title}">${t.title}</span>
             <button class="del-thread-btn" onclick="event.stopPropagation(); deleteThread('${t.thread_id}')" title="Delete conversation">✕</button>
         </div>
     `).join("");
+}
+
+function renderWelcomeChat() {
+    const feed = document.getElementById("chatFeed");
+    if (!feed) return;
+    feed.innerHTML = `
+        <div class="chat-welcome" id="chatWelcome">
+            <div class="chat-welcome-icon">
+                <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            </div>
+            <h3>Ask anything about your study abroad journey</h3>
+            <p>Upload your CV on the left or type a question below. You can ask follow-up questions anytime — your session memory is saved automatically.</p>
+        </div>
+    `;
+}
+
+function appendChatMessage(role, content) {
+    const feed = document.getElementById("chatFeed");
+    if (!feed) return null;
+    const welcome = document.getElementById("chatWelcome");
+    if (welcome) welcome.remove();
+
+    const row = document.createElement("div");
+    row.className = `chat-msg-row ${role}`;
+
+    if (role === "user") {
+        const bubble = document.createElement("div");
+        bubble.className = "chat-bubble-user";
+        bubble.textContent = content;
+        row.appendChild(bubble);
+        feed.appendChild(row);
+        feed.scrollTop = feed.scrollHeight;
+        return bubble;
+    } else {
+        const bubble = document.createElement("div");
+        bubble.className = "chat-bubble-assistant";
+        const body = document.createElement("div");
+        body.className = "markdown-body";
+        body.innerHTML = (typeof marked !== "undefined" && content) ? marked.parse(content) : (content || `<span class="streaming-cursor"></span>`);
+        bubble.appendChild(body);
+
+        const actions = document.createElement("div");
+        actions.className = "chat-bubble-actions";
+        actions.innerHTML = `
+            <button class="chat-mini-btn" onclick="copyBubbleText(this)">Copy</button>
+            <button class="chat-mini-btn" onclick="printDossier()">Print / PDF</button>
+        `;
+        bubble.appendChild(actions);
+        row.appendChild(bubble);
+        feed.appendChild(row);
+        feed.scrollTop = feed.scrollHeight;
+        return body;
+    }
+}
+
+function copyBubbleText(btn) {
+    const bubble = btn.closest(".chat-bubble-assistant");
+    const text = bubble?.querySelector(".markdown-body")?.innerText || "";
+    navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!"));
+}
+
+async function loadThreadMessages(threadId) {
+    const threadDisplay = document.getElementById("threadDisplay");
+    if (threadDisplay) threadDisplay.textContent = threadId;
+    try {
+        const res = await fetch(`/api/threads/${encodeURIComponent(threadId)}/messages`);
+        const data = await res.json();
+        const feed = document.getElementById("chatFeed");
+        if (!feed) return;
+        if (data.success && data.messages && data.messages.length > 0) {
+            feed.innerHTML = "";
+            data.messages.forEach(m => appendChatMessage(m.role, m.content));
+        } else {
+            renderWelcomeChat();
+        }
+    } catch (e) {
+        console.error("Failed to load messages:", e);
+    }
+}
+
+function handleChatKeydown(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        runFinder();
+    }
 }
 
 function createNewThread() {
@@ -111,17 +197,18 @@ function createNewThread() {
     localStorage.setItem("unifinder_thread_id", currentThreadId);
     localStorage.setItem("unifinder_session_id", currentSessionId);
 
-    // Reset UI
-    document.getElementById("userQuery").value = "";
-    document.getElementById("dossierCard").classList.add("hidden");
-    document.getElementById("metricsBanner").classList.add("hidden");
-    document.getElementById("agentStepper").classList.add("hidden");
-    document.getElementById("hitlBanner").classList.add("hidden");
-    document.getElementById("dossierContent").innerHTML = "";
+    const queryEl = document.getElementById("userQuery");
+    if (queryEl) queryEl.value = "";
+    document.getElementById("metricsBanner")?.classList.add("hidden");
+    document.getElementById("hitlBanner")?.classList.add("hidden");
+    document.getElementById("thinkingBubble")?.classList.add("hidden");
+    const threadDisplay = document.getElementById("threadDisplay");
+    if (threadDisplay) threadDisplay.textContent = currentThreadId;
+    renderWelcomeChat();
 
     loadThreadsList();
     loadSessionDocs();
-    showToast("Started new counseling session!");
+    showToast("Started new chat session!");
 }
 
 function switchThread(threadId, title) {
@@ -131,6 +218,7 @@ function switchThread(threadId, title) {
     localStorage.setItem("unifinder_session_id", currentSessionId);
 
     loadThreadsList();
+    loadThreadMessages(threadId);
     loadSessionDocs();
     showToast(`Switched to: ${title}`);
     if (window.innerWidth <= 1024) {
@@ -285,23 +373,22 @@ async function runFinder() {
     const query = queryInput.value.trim();
 
     if (!query) {
-        showError("Please enter your study goal, preferred universities, or budget questions.");
+        showError("Please enter your study goal, preferred universities, or follow-up question.");
         return;
     }
 
     const findBtn = document.getElementById("findBtn");
-    const btnText = findBtn.querySelector(".btn-text");
-    const btnSpinner = findBtn.querySelector(".btn-spinner");
-    const stepper = document.getElementById("agentStepper");
-    const isStreaming = document.getElementById("streamToggle").checked;
+    const thinkingBubble = document.getElementById("thinkingBubble");
+    const thinkingText = document.getElementById("thinkingText");
 
     findBtn.disabled = true;
-    btnText.textContent = "Multi-Agent System Working...";
-    btnSpinner.classList.remove("hidden");
-    stepper.classList.remove("hidden");
+    queryInput.value = "";
+    appendChatMessage("user", query);
 
-    const stepIds = ["step-guardrail", "step-crag", "step-discovery", "step-opps", "step-pr", "step-synthesis"];
-    resetStepper(stepIds);
+    if (thinkingBubble) {
+        thinkingBubble.classList.remove("hidden");
+        if (thinkingText) thinkingText.textContent = "Analyzing your profile & goals...";
+    }
 
     const payload = {
         message: query,
@@ -317,29 +404,23 @@ async function runFinder() {
         llm_provider: activeProvider
     };
 
-    if (isStreaming) {
-        await executeStreamingSearch(payload, stepIds);
-    } else {
-        await executeStandardSearch(payload, stepIds);
-    }
+    await executeStreamingSearch(payload);
 
+    if (thinkingBubble) thinkingBubble.classList.add("hidden");
     findBtn.disabled = false;
-    btnText.textContent = "🚀 Run Multi-Agent Search";
-    btnSpinner.classList.add("hidden");
     loadThreadsList();
 }
 
-async function executeStreamingSearch(payload, stepIds) {
-    const dossierCard = document.getElementById("dossierCard");
-    const dossierContent = document.getElementById("dossierContent");
+async function executeStreamingSearch(payload) {
     const threadDisplay = document.getElementById("threadDisplay");
+    const thinkingBubble = document.getElementById("thinkingBubble");
+    const thinkingText = document.getElementById("thinkingText");
+    const feed = document.getElementById("chatFeed");
 
-    dossierCard.classList.remove("hidden");
-    dossierContent.innerHTML = `<span class="streaming-cursor"></span>`;
-    threadDisplay.textContent = `Thread: ${payload.thread_id}`;
+    if (threadDisplay) threadDisplay.textContent = payload.thread_id;
 
+    let assistantBody = null;
     let accumulatedMarkdown = "";
-    let stepIdx = 0;
 
     try {
         const response = await fetch("/api/chat/stream", {
@@ -348,7 +429,7 @@ async function executeStreamingSearch(payload, stepIds) {
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error("Stream connection failed.");
+        if (!response.ok) throw new Error("Connection failed.");
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -360,53 +441,39 @@ async function executeStreamingSearch(payload, stepIds) {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split("\n\n");
-            buffer = lines.pop(); // Retain remainder
+            buffer = lines.pop();
 
             for (const line of lines) {
                 if (line.startsWith("data: ")) {
                     const eventData = JSON.parse(line.substring(6));
 
-                    if (eventData.type === "agent_event") {
-                        const pill = document.getElementById(`agent-pill-${eventData.node}`);
-                        if (pill) {
-                            pill.style.background = "rgba(16, 185, 129, 0.22)";
-                            pill.style.border = "1px solid rgba(16, 185, 129, 0.5)";
-                            pill.style.color = "#A7F3D0";
-                            pill.textContent = `✅ ${eventData.label}`;
-                            pill.title = eventData.summary || "";
-                        }
-                    } else if (eventData.type === "step") {
-                        if (stepIdx < stepIds.length) {
-                            if (stepIdx > 0) {
-                                document.getElementById(stepIds[stepIdx - 1]).classList.remove("active");
-                                document.getElementById(stepIds[stepIdx - 1]).classList.add("completed");
-                            }
-                            document.getElementById(stepIds[stepIdx]).classList.add("active");
-                            stepIdx++;
-                        }
+                    if (eventData.type === "phase") {
+                        if (thinkingText) thinkingText.textContent = eventData.text;
                     } else if (eventData.type === "token") {
+                        if (thinkingBubble) thinkingBubble.classList.add("hidden");
+                        if (!assistantBody) {
+                            assistantBody = appendChatMessage("assistant", "");
+                        }
                         accumulatedMarkdown += eventData.content;
                         if (typeof marked !== "undefined") {
-                            dossierContent.innerHTML = marked.parse(accumulatedMarkdown) + `<span class="streaming-cursor"></span>`;
+                            assistantBody.innerHTML = marked.parse(accumulatedMarkdown) + `<span class="streaming-cursor"></span>`;
                         } else {
-                            dossierContent.innerText = accumulatedMarkdown;
+                            assistantBody.innerText = accumulatedMarkdown;
                         }
+                        if (feed) feed.scrollTop = feed.scrollHeight;
                     } else if (eventData.type === "complete") {
-                        stepIds.forEach(id => {
-                            document.getElementById(id).classList.remove("active");
-                            document.getElementById(id).classList.add("completed");
-                        });
+                        if (thinkingBubble) thinkingBubble.classList.add("hidden");
                         displayCompletedMetadata(eventData.data);
-                        // Final clean render
-                        if (typeof marked !== "undefined") {
-                            dossierContent.innerHTML = marked.parse(accumulatedMarkdown);
+                        if (assistantBody && typeof marked !== "undefined") {
+                            assistantBody.innerHTML = marked.parse(accumulatedMarkdown);
                         }
                     }
                 }
             }
         }
     } catch (e) {
-        showError("Streaming error: " + e.message);
+        if (thinkingBubble) thinkingBubble.classList.add("hidden");
+        showError("Chat error: " + e.message);
     }
 }
 

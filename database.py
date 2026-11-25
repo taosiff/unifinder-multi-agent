@@ -121,6 +121,16 @@ def init_sqlite_db():
     );
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        thread_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
     conn.commit()
 
     cursor.execute("SELECT COUNT(*) FROM universities")
@@ -196,6 +206,16 @@ def init_postgres_db():
         doc_name TEXT NOT NULL,
         chunks_json TEXT NOT NULL,
         profile_hints_json TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id SERIAL PRIMARY KEY,
+        thread_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
@@ -598,6 +618,9 @@ def purge_session_data(thread_id: str, session_id: Optional[str] = None) -> Dict
         cursor.execute(f"DELETE FROM chat_threads WHERE thread_id = {ph}", (thread_id,))
         counts["deleted_threads"] = cursor.rowcount or 0
 
+        cursor.execute(f"DELETE FROM chat_messages WHERE thread_id = {ph}", (thread_id,))
+        counts["deleted_messages"] = cursor.rowcount or 0
+
         cursor.execute(f"DELETE FROM session_documents WHERE session_id = {ph} OR session_id = {ph}", (sid, thread_id))
         counts["deleted_documents"] = cursor.rowcount or 0
 
@@ -656,6 +679,39 @@ def get_session_document_records(session_id: str) -> List[Dict[str, Any]]:
         except Exception:
             item["chunks"] = []
             item["profile_hints"] = {}
+        results.append(item)
+    return results
+
+
+def save_chat_message(thread_id: str, role: str, content: str) -> bool:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    ph = "%s" if is_postgres() else "?"
+    cursor.execute(
+        f"INSERT INTO chat_messages (thread_id, role, content) VALUES ({ph}, {ph}, {ph})",
+        (thread_id, role, content)
+    )
+    if not is_postgres():
+        conn.commit()
+    conn.close()
+    return True
+
+
+def get_chat_messages(thread_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    ph = "%s" if is_postgres() else "?"
+    cursor.execute(
+        f"SELECT role, content, created_at FROM chat_messages WHERE thread_id = {ph} ORDER BY id ASC LIMIT {ph}",
+        (thread_id, limit)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    results = []
+    for r in rows:
+        item = dict(r)
+        if item.get("created_at") is not None:
+            item["created_at"] = str(item["created_at"])
         results.append(item)
     return results
 

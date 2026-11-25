@@ -32,7 +32,8 @@ from database import (
     get_or_create_thread,
     list_chat_threads,
     delete_chat_thread,
-    purge_session_data
+    purge_session_data,
+    get_chat_messages
 )
 from tools.sop_reviewer_tool import review_statement_of_purpose
 from tools.rag_engine import index_user_document, get_session_documents, clear_session_memory
@@ -322,6 +323,13 @@ async def create_thread(req: ThreadCreateRequest):
         country=req.country or ""
     )
     return {"success": True, "thread": item}
+
+
+@app.get("/api/threads/{thread_id}/messages")
+async def get_thread_messages(thread_id: str):
+    """Returns persisted ChatGPT-style conversation history for a thread."""
+    msgs = get_chat_messages(thread_id)
+    return {"success": True, "thread_id": thread_id, "messages": msgs}
 
 
 @app.delete("/api/threads/{thread_id}")
