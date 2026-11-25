@@ -35,7 +35,7 @@ from database import (
 )
 from tools.sop_reviewer_tool import review_statement_of_purpose
 from tools.rag_engine import index_user_document, get_session_documents
-from tools.opportunities_tool import get_live_opportunities, get_immigration_news
+from tools.opportunities_tool import get_live_opportunities, get_immigration_news, get_scholarship_sources
 from tools.univs_tool import search_univs_programs, search_univs_institutes, get_univs_addresses
 from tools.university_scraper_tool import scrape_official_university_admissions
 
@@ -282,21 +282,25 @@ async def list_documents(session_id: Optional[str] = None):
 async def get_opportunities(
     destination: Optional[str] = None,
     degree: Optional[str] = None,
-    funding: Optional[str] = None
+    funding: Optional[str] = None,
+    record_status: Optional[str] = None
 ):
     """
-    Returns live curated global scholarships and latest immigration policy news.
+    Returns Verified Open and Newly Discovered scholarships (RSS + JSON + official portals)
+    alongside attribution metadata and latest immigration policy news.
     """
     scholarships = get_live_opportunities(
         destination=destination,
         degree_level=degree,
-        funding_type=funding
+        funding_type=funding,
+        record_status=record_status
     )
     news = get_immigration_news()
     return {
         "success": True,
         "scholarships": scholarships,
-        "news": news
+        "news": news,
+        "sources": get_scholarship_sources()
     }
 
 

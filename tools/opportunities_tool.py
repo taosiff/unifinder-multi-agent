@@ -5,6 +5,10 @@ Maintains curated active scholarships and live DuckDuckGo query updates for newl
 
 from typing import List, Dict, Any, Optional
 from tools.web_intelligence import search_web_knowledge
+from tools.scholarship_feeds_tool import (
+    fetch_all_scholarship_feeds,
+    SCHOLARSHIP_SOURCES_CATALOGUE
+)
 
 ACTIVE_GLOBAL_SCHOLARSHIPS = [
     {
@@ -160,12 +164,28 @@ IMMIGRATION_AND_STUDY_NEWS = [
 def get_live_opportunities(
     destination: Optional[str] = None,
     degree_level: Optional[str] = None,
-    funding_type: Optional[str] = None
+    funding_type: Optional[str] = None,
+    record_status: Optional[str] = None,
+    include_feeds: bool = True
 ) -> List[Dict[str, Any]]:
     """
-    Filters curated active scholarships by destination, degree, and funding model.
+    Combines curated Verified Open government portals with live Newly Discovered
+    RSS (Worldwide Scholarships) and JSON (Open Scholarships) feeds, preserving
+    attribution and original posting links.
     """
-    results = ACTIVE_GLOBAL_SCHOLARSHIPS
+    verified_curated = [
+        {
+            **s,
+            "record_status": s.get("record_status", "Verified Open"),
+            "source_name": s.get("source_name", "Official Government Portal"),
+            "attribution": s.get("attribution", "Official awarding body portal")
+        }
+        for s in ACTIVE_GLOBAL_SCHOLARSHIPS
+    ]
+
+    results = verified_curated
+    if include_feeds:
+        results = results + fetch_all_scholarship_feeds(rss_limit=6, json_limit=6)
 
     if destination and destination.strip():
         dest_low = destination.lower().strip()
@@ -179,7 +199,16 @@ def get_live_opportunities(
         fund_low = funding_type.lower().strip()
         results = [s for s in results if fund_low in s.get("funding_type", "").lower()]
 
+    if record_status and record_status.strip():
+        rec_low = record_status.lower().strip()
+        results = [s for s in results if rec_low in s.get("record_status", "").lower()]
+
     return results
+
+
+def get_scholarship_sources() -> List[Dict[str, Any]]:
+    """Returns metadata and reuse/attribution notes for all integrated scholarship sources."""
+    return SCHOLARSHIP_SOURCES_CATALOGUE
 
 
 def get_immigration_news() -> List[Dict[str, Any]]:

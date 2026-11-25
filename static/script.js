@@ -510,12 +510,14 @@ function filterOpportunities() {
     const dest = document.getElementById("oppCountryFilter").value.toLowerCase();
     const deg = document.getElementById("oppDegreeFilter").value;
     const fund = document.getElementById("oppFundingFilter").value.toLowerCase();
+    const status = (document.getElementById("oppStatusFilter")?.value || "").toLowerCase();
 
     const filtered = cachedScholarships.filter(s => {
         const matchDest = !dest || s.destination.toLowerCase().includes(dest);
         const matchDeg = !deg || s.degree_levels.includes(deg);
         const matchFund = !fund || s.funding_type.toLowerCase().includes(fund);
-        return matchDest && matchDeg && matchFund;
+        const matchStatus = !status || (s.record_status || "").toLowerCase().includes(status);
+        return matchDest && matchDeg && matchFund && matchStatus;
     });
 
     renderOpportunities(filtered);
@@ -528,24 +530,37 @@ function renderOpportunities(opps) {
         return;
     }
 
-    container.innerHTML = opps.map(o => `
+    container.innerHTML = opps.map(o => {
+        const recStatus = o.record_status || "Verified Open";
+        const isVerified = recStatus.toLowerCase().includes("verified");
+        const statusBadge = isVerified
+            ? `<span class="opp-funding-tag" style="background:#D1FAE5; color:#065F46; border-color:#A7F3D0;">✅ Verified Open</span>`
+            : `<span class="purple-pill">🆕 Newly Discovered</span>`;
+        const sourceLine = o.source_name ? `<div class="opp-detail-row" style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem;">🔗 Source: <strong>${o.source_name}</strong> (${o.attribution || "Original posting"})</div>` : "";
+
+        return `
         <div class="opp-card">
             <div>
                 <div class="opp-card-header">
                     <h4>${o.title}</h4>
-                    <span class="opp-funding-tag">${o.funding_type}</span>
+                    <div style="display:flex; flex-direction:column; gap:0.35rem; align-items:flex-end;">
+                        ${statusBadge}
+                        <span class="opp-funding-tag">${o.funding_type}</span>
+                    </div>
                 </div>
                 <div class="opp-detail-row"><strong>📍 Destination:</strong> ${o.destination}</div>
                 <div class="opp-detail-row"><strong>🎓 Degrees:</strong> ${o.degree_levels.join(", ")}</div>
                 <div class="opp-detail-row"><strong>💰 Coverage:</strong> ${o.coverage}</div>
                 <div class="opp-detail-row"><strong>📅 Deadline:</strong> <span style="color:#C92A2A; font-weight:700;">${o.deadline}</span></div>
                 <div class="opp-detail-row"><strong>📋 Eligibility:</strong> ${o.eligibility}</div>
+                ${sourceLine}
             </div>
             <a href="${o.official_url}" target="_blank" rel="noopener" class="opp-apply-btn">
-                Visit Official Portal ↗
+                View Original Posting ↗
             </a>
         </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 function renderNews(news) {

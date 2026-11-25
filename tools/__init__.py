@@ -17,7 +17,8 @@ from tools.rag_engine import (
 from tools.opportunities_tool import (
     get_live_opportunities,
     get_immigration_news,
-    search_live_scholarship_opportunities
+    search_live_scholarship_opportunities,
+    get_scholarship_sources
 )
 from tools.living_cost_tool import (
     convert_currency,
@@ -53,6 +54,7 @@ __all__ = [
     "get_live_opportunities",
     "get_immigration_news",
     "search_live_scholarship_opportunities",
+    "get_scholarship_sources",
     "convert_currency",
     "get_city_living_cost",
     "get_embassy_visa_checklist",

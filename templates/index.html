@@ -2150,6 +2150,7 @@ a:hover {
                 <div class="filter-bar">
                     <select id="oppCountryFilter" onchange="filterOpportunities()">
                         <option value="">All Destinations</option>
+                        <option value="International">International</option>
                         <option value="Germany">Germany</option>
                         <option value="European Union">European Union</option>
                         <option value="United States">United States</option>
@@ -2172,6 +2173,13 @@ a:hover {
                         <option value="">All Funding Models</option>
                         <option value="Fully Funded">Fully Funded</option>
                         <option value="Need & Merit">Need & Merit Based</option>
+                        <option value="Merit">Merit</option>
+                    </select>
+
+                    <select id="oppStatusFilter" onchange="filterOpportunities()">
+                        <option value="">All Record Statuses</option>
+                        <option value="Verified Open">✅ Verified Open</option>
+                        <option value="Newly Discovered">🆕 Newly Discovered</option>
                     </select>
                 </div>
 
