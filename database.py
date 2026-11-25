@@ -110,6 +110,17 @@ def init_sqlite_db():
     );
     """)
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS session_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        doc_name TEXT NOT NULL,
+        chunks_json TEXT NOT NULL,
+        profile_hints_json TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
     conn.commit()
 
     cursor.execute("SELECT COUNT(*) FROM universities")
@@ -175,6 +186,17 @@ def init_postgres_db():
         message_count INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS session_documents (
+        id SERIAL PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        doc_name TEXT NOT NULL,
+        chunks_json TEXT NOT NULL,
+        profile_hints_json TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
 
@@ -560,6 +582,44 @@ def delete_chat_thread(thread_id: str) -> bool:
         conn.commit()
     conn.close()
     return affected > 0
+
+
+def save_session_document(session_id: str, doc_name: str, chunks: List[Dict[str, Any]], profile_hints: Dict[str, Any]) -> bool:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    ph = "%s" if is_postgres() else "?"
+    cursor.execute(
+        f"INSERT INTO session_documents (session_id, doc_name, chunks_json, profile_hints_json) VALUES ({ph}, {ph}, {ph}, {ph})",
+        (session_id, doc_name, json.dumps(chunks), json.dumps(profile_hints))
+    )
+    if not is_postgres():
+        conn.commit()
+    conn.close()
+    return True
+
+
+def get_session_document_records(session_id: str) -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    ph = "%s" if is_postgres() else "?"
+    cursor.execute(
+        f"SELECT doc_name, chunks_json, profile_hints_json FROM session_documents WHERE session_id = {ph} ORDER BY id ASC",
+        (session_id,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    results = []
+    for row in rows:
+        item = dict(row)
+        try:
+            item["chunks"] = json.loads(item.get("chunks_json") or "[]")
+            item["profile_hints"] = json.loads(item.get("profile_hints_json") or "{}")
+        except Exception:
+            item["chunks"] = []
+            item["profile_hints"] = {}
+        results.append(item)
+    return results
 
 
 init_db()
