@@ -191,18 +191,6 @@ def invoke_llm_with_fallback(messages: List[AnyMessage]) -> Optional[str]:
             None
         ),
         (
-            "GITHUB_TOKEN",
-            "https://models.inference.ai.azure.com/chat/completions",
-            ["gpt-4o-mini", "Meta-Llama-3.3-70B-Instruct"],
-            None
-        ),
-        (
-            "HF_TOKEN",
-            "https://router.huggingface.co/v1/chat/completions",
-            ["Qwen/Qwen2.5-72B-Instruct", "meta-llama/Llama-3.3-70B-Instruct"],
-            None
-        ),
-        (
             "COHERE_API_KEY",
             "https://api.cohere.com/compatibility/v1/chat/completions",
             ["command-a-03-2025", "command-r-08-2024"],
