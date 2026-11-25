@@ -123,6 +123,108 @@ def get_llm(api_key_override: Optional[str] = None, provider_override: Optional[
     return None
 
 
+def _call_openai_compatible(base_url: str, api_key: str, model: str, messages: List[AnyMessage], extra_headers: Optional[Dict[str, str]] = None) -> Optional[str]:
+    """Lightweight OpenAI-compatible chat completions call for Cerebras, OpenRouter, Mistral, SambaNova."""
+    import requests
+    formatted = []
+    for m in messages:
+        role = "system" if isinstance(m, SystemMessage) else ("user" if isinstance(m, HumanMessage) else "assistant")
+        formatted.append({"role": role, "content": m.content})
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        **(extra_headers or {})
+    }
+    resp = requests.post(
+        base_url,
+        headers=headers,
+        json={"model": model, "messages": formatted, "temperature": 0.3, "max_tokens": 2500},
+        timeout=25
+    )
+    if resp.status_code == 200:
+        data = resp.json()
+        choices = data.get("choices") or []
+        if choices:
+            return choices[0].get("message", {}).get("content", "")
+    raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:150]}")
+
+
+def invoke_llm_with_fallback(messages: List[AnyMessage]) -> Optional[str]:
+    """
+    Tries all configured FREE LLM providers in sequence during actual inference.
+    If one provider hits a rate limit (429) or fails, automatically falls back to the next:
+      1. Groq (GROQ_API_KEY)
+      2. Google Gemini (GOOGLE_API_KEY)
+      3. Cerebras (CEREBRAS_API_KEY)
+      4. OpenRouter (OPENROUTER_API_KEY)
+      5. Mistral AI (MISTRAL_API_KEY)
+      6. SambaNova (SAMBANOVA_API_KEY)
+    """
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        for model_name in GROQ_FALLBACK_MODELS:
+            try:
+                llm = ChatGroq(model=model_name, api_key=groq_key, temperature=0.3)
+                resp = llm.invoke(messages)
+                if resp and resp.content:
+                    return resp.content
+            except Exception:
+                continue
+
+    google_key = os.getenv("GOOGLE_API_KEY")
+    if google_key:
+        for model_name in GEMINI_FALLBACK_MODELS:
+            try:
+                llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.3)
+                resp = llm.invoke(messages)
+                if resp and resp.content:
+                    return resp.content
+            except Exception:
+                continue
+
+    openai_compat_providers = [
+        (
+            "CEREBRAS_API_KEY",
+            "https://api.cerebras.ai/v1/chat/completions",
+            ["llama-3.3-70b", "llama3.1-8b"],
+            None
+        ),
+        (
+            "OPENROUTER_API_KEY",
+            "https://openrouter.ai/api/v1/chat/completions",
+            ["meta-llama/llama-3.3-70b-instruct:free", "google/gemma-3-27b-it:free", "deepseek/deepseek-r1:free"],
+            {"HTTP-Referer": "https://unifinder.local", "X-Title": "UniFinder AI"}
+        ),
+        (
+            "MISTRAL_API_KEY",
+            "https://api.mistral.ai/v1/chat/completions",
+            ["mistral-small-latest", "open-mistral-nemo"],
+            None
+        ),
+        (
+            "SAMBANOVA_API_KEY",
+            "https://api.sambanova.ai/v1/chat/completions",
+            ["Meta-Llama-3.3-70B-Instruct", "Meta-Llama-3.1-8B-Instruct"],
+            None
+        ),
+    ]
+
+    for env_var, url, models, hdrs in openai_compat_providers:
+        key = os.getenv(env_var)
+        if not key:
+            continue
+        for model_name in models:
+            try:
+                out = _call_openai_compatible(url, key, model_name, messages, extra_headers=hdrs)
+                if out:
+                    return out
+            except Exception:
+                continue
+
+    return None
+
+
 # ==========================================
 # Comprehensive State Definition
 # ==========================================
@@ -630,17 +732,14 @@ FORMAT THE RESPONSE BEAUTIFULLY WITH:
 ## 6. Actionable Next Steps & Timeline
 """
 
-    if llm:
-        try:
-            resp = llm.invoke([
-                SystemMessage(content="You are an expert AI Education and Global Immigration Counselor. Use clean markdown formatting."),
-                HumanMessage(content=prompt)
-            ])
-            dossier = resp.content
-            calls = state.get("llm_calls", 0) + 1
-        except Exception as e:
-            dossier = generate_rule_based_dossier(state, error_msg=str(e))
-            calls = state.get("llm_calls", 0)
+    msgs = [
+        SystemMessage(content="You are an expert AI Education and Global Immigration Counselor. Use clean markdown formatting."),
+        HumanMessage(content=prompt)
+    ]
+    llm_output = invoke_llm_with_fallback(msgs)
+    if llm_output:
+        dossier = llm_output
+        calls = state.get("llm_calls", 0) + 1
     else:
         dossier = generate_rule_based_dossier(state)
         calls = state.get("llm_calls", 0)
