@@ -1,134 +1,150 @@
-# 🎓 UniFinder AI — Higher-Ed, PR, Scholarships & C-RAG Matrix
+<div align="center">
 
-> **An Autonomous Multi-Agent Intelligence System built with LangChain, LangGraph Subgraphs, SqliteSaver Persistent Memory, Corrective RAG (C-RAG), Real-Time SSE Streaming, Human-in-the-Loop (HITL), and LangSmith Observability.**
->
-> **Designed in an Executive Luxury Navy (`#0B192C`), Warm Cream (`#FDFBF7`), and Vibrant Coral (`#FF6B6B`) Aesthetic.**
+# UniFinder AI — Multi-Agent Higher-Education, Scholarship & Immigration Intelligence
 
----
+**An autonomous LangGraph multi-agent platform that turns a student's CV or study goals into verified university matches, live scraped admissions data, student reviews, scholarship opportunities, post-study work visa roadmaps, and career ROI forecasts.**
 
-## 🌟 The Real-World Business Problem Solved
-International students and graduate researchers seeking Bachelor's (BSc), Master's (MSc), or Doctoral (PhD) degrees face a fragmented, high-risk landscape:
-1. **Scattered, Opaque Data**: Tuition fees, living expenses, and rankings are siloed across disconnected sites.
-2. **Immigration Blindspots**: Students often enroll in degrees without understanding post-graduation work permit (PGWP/OPT) restrictions or permanent residency (PR) viability.
-3. **Financial Miscalculations**: Hidden proof-of-funds mandates (e.g. German *Sperrkonto* €11,904, Canadian GIC $20,635 CAD) cause sudden visa refusals.
-4. **Generic AI Hallucinations**: Standard chatbots give vague advice without analyzing the student's actual transcript, GPA, or regional immigration rules.
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-0D5C75?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-1E242B?style=flat-square)](https://langchain-ai.github.io/langgraph/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Cloud%20Ready-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-**UniFinder AI** solves this end-to-end by orchestrating a specialized LangGraph network of modular subgraphs that conduct live web scraping, evaluate uploaded transcripts/CVs with **Corrective RAG (C-RAG)**, enforce admission & financial safety guardrails, stream real-time tokens, and support **Human-in-the-Loop (HITL)** approvals.
+</div>
 
 ---
 
-## 🏗️ Multi-Agent Subgraphs Architecture (LangGraph)
+## Why UniFinder AI?
 
-UniFinder AI uses modular subgraphs with persistent checkpointing:
+International students applying for **BSc, MSc, or PhD** degrees face fragmented data across university portals, scholarship feeds, visa rulebooks, and student forums. **UniFinder AI** solves this with a **dual-stage parallel LangGraph multi-agent architecture**:
+
+- **Parallel Discovery**: Queries the **Univs.com Public Catalogue API** (22,900+ institutes), **StudyPortals**, **DuckDuckGo Web Intelligence**, and a **curated PostgreSQL/SQLite database** concurrently.
+- **Official Website Admissions Subgraph**: A compiled LangGraph subgraph (`official_site_subgraph`) crawls target university websites to extract **tuition, IELTS/TOEFL minimums, GPA cutoffs, deadlines, intakes, and programs**.
+- **CV-Driven Search & Corrective RAG (C-RAG)**: Upload a PDF/DOCX/TXT CV or transcript—chunks and extracted profile facts (`GPA`, `IELTS`, `Major`, `Skills`, `Recommended Degree`) persist in **online PostgreSQL** (`session_documents`) and automatically drive university & program search.
+- **Attribution-Compliant Live Scholarships**: Combines **Verified Open** government portals with **Newly Discovered** records from **Worldwide Scholarships RSS** and **Open Scholarships JSON (CC-BY-4.0)**, preserving original links and attribution.
+- **Resilient 4-Provider Free LLM Fallback**: Automatically cascades across **Groq → Google Gemini → Mistral AI → Cohere** on rate limits or failures.
+- **Privacy-First Exit Wipe**: 1-to-1 chat thread & session binding with one-click **`End Chat & Wipe Data`** (or auto-wipe on tab exit) that purges threads, messages, CVs, shortlists, and LangGraph checkpoints.
+
+---
+
+## Multi-Agent Architecture
 
 ```mermaid
-flowchart TD
-    START([User Query + Uploaded Documents]) --> SG1[1. Security & Intent Guardrail]
-    SG1 --> SG2[2. Corrective RAG Subgraph - C-RAG]
-    SG2 --> SG3[3. University Discovery & Scraper Subgraph]
-    SG3 --> SG4[4. Live Opportunities & News Subgraph]
-    SG4 --> SG5[5. Admission, PR & Living Cost Subgraph]
-    SG5 --> HITL{HITL Verification Required?}
-    HITL -- Yes --> HITL_NODE[Human Counselor Review & Approval]
-    HITL_NODE --> SG6[6. Synthesis Counselor Subgraph]
-    HITL -- No --> SG6
-    SG6 --> STREAM([Live SSE Token Streaming])
-    STREAM --> END([Master Admissions Dossier])
+flowchart LR
+    START((START)) --> S0A["intent_safety\n(Guardrails)"]
+    S0A --> S0B["crag_retrieval\n(C-RAG + Online DB)"]
+    S0B --> S0C["cv_profile_extractor\n(CV -> Search Params)"]
 
-    subgraph Data & Tool Services
-        MP[MastersPortal / StudyPortals BS4 Scraper]
-        DB[(150+ Curated Global Universities DB)]
-        RAG[PyPDF / Document Parser & BM25 Retrievial]
-        OPP[Curated Active Scholarships & Policy News]
-        PR[Immigration & PSWV Calculator]
-        ROI[Salary & Payback Math Engine]
-        SQL[(Persistent SqliteSaver Memory)]
+    subgraph Stage1["Stage 1: 4 Parallel Search Agents"]
+        A1["agent_univs_search"]
+        A2["agent_studyportals_scraper"]
+        A3["agent_web_search"]
+        A4["agent_db_search"]
     end
 
-    SG2 -.-> RAG
-    SG3 -.-> MP
-    SG3 -.-> DB
-    SG4 -.-> OPP
-    SG5 -.-> PR
-    SG5 -.-> ROI
-    SG6 -.-> SQL
+    S0C --> A1 & A2 & A3 & A4
+    A1 & A2 & A3 & A4 --> M["merge_discovery\n(Fan-In Sync)"]
+
+    subgraph Stage2["Stage 2: 6 Parallel Enrichment Agents"]
+        B1["agent_official_admissions\n(official_site_subgraph)"]
+        B2["agent_reddit_reviews\n(Reddit RSS + Forums)"]
+        B3["agent_scholarship_finder\n(Verified + RSS/JSON)"]
+        B4["agent_assessment_visa\n(PR, Cost & ROI + HITL)"]
+        B5["agent_country_intel\n(Economy & Student-Friendliness)"]
+        B6["agent_subject_job_market\n(Job Demand & Sponsored Visas)"]
+    end
+
+    M --> B1 & B2 & B3 & B4 & B5 & B6
+    B1 & B2 & B3 & B4 & B5 & B6 --> GEN["answer_generator\n(SSE Streaming + 4-LLM Fallback)"]
+    GEN --> END((END))
+```
+
+For a deep dive into state schemas, subgraphs, and database tables, see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+---
+
+## Key Features
+
+| Capability | Implementation |
+| :--- | :--- |
+| **ChatGPT-Style Persistent Chat** | Multi-turn conversations persisted in PostgreSQL (`chat_messages` + `PostgresSaver`) with discreet SSE streaming. |
+| **Parallel Search & Enrichment** | 4 parallel discovery agents + 6 parallel enrichment agents orchestrated natively in LangGraph. |
+| **Official Site Scraper Subgraph** | Compiled 3-node `StateGraph` (`resolve_site` → `scrape_pages` → `extract_admissions`) using BeautifulSoup4. |
+| **Live Scholarships & Policy News** | Distinguishes `✅ Verified Open` portals from `🆕 Newly Discovered` RSS/JSON feed posts with 15-min TTL caching. |
+| **Career ROI & PR Pathways** | Calculates 3-year net ROI, tuition payback period, city living costs, and post-study sponsored visa rules. |
+| **SOP Reviewer & Wishlist** | Evaluates Statement of Purpose drafts with cliché detection + persistent university shortlist CRUD. |
+
+---
+
+## Project Structure
+
+```text
+unifinder-multi-agent/
+├── app.py                          # FastAPI server, REST APIs & SSE streaming
+├── backend.py                      # LangGraph 15-node parallel workflow & 4-LLM fallback
+├── database.py                     # Dual-mode PostgreSQL / SQLite persistence & exit wipe
+├── guardrails.py                   # Prompt-injection guardrails, eligibility & HITL triggers
+├── run.py                          # Interactive launcher with smart port fallback
+├── test_app.py                     # End-to-end verification suite
+├── requirements.txt                # Python dependencies
+├── render.yaml & Procfile          # 1-click Render cloud deployment configs
+├── DEPLOYMENT_RENDER.md            # Render + PostgreSQL deployment guide
+├── docs/
+│   └── ARCHITECTURE.md             # Deep-dive technical architecture documentation
+├── tools/
+│   ├── univs_tool.py               # Univs.com Public Catalogue REST API integration
+│   ├── mastersportal_tool.py       # StudyPortals (Masters/Bachelors/PhD) scraper
+│   ├── university_scraper_tool.py  # Official university site crawler & LangGraph subgraph
+│   ├── reviews_tool.py             # Reddit RSS + forum student/alumni reviews extractor
+│   ├── country_job_intel_tool.py   # Country economics & subject sponsored-visa intelligence
+│   ├── scholarship_feeds_tool.py   # Worldwide Scholarships RSS + Open Scholarships JSON
+│   ├── opportunities_tool.py       # Unified Verified Open & Newly Discovered scholarships
+│   ├── rag_engine.py               # Online DB-backed C-RAG & CV profile extraction
+│   ├── pr_visa_tool.py             # Post-study work permit & PR feasibility engine
+│   ├── career_roi_tool.py          # Starting salary & tuition payback ROI calculator
+│   ├── living_cost_tool.py         # City living costs & currency converter
+│   ├── sop_reviewer_tool.py        # Statement of Purpose evaluator
+│   └── web_intelligence.py         # DuckDuckGo live web search & page reader
+├── templates/
+│   └── index.html                  # Ghost White, Cool Gray & Freezing Blue dashboard
+└── static/
+    ├── style.css                   # Responsive UI design system
+    └── script.js                   # ChatGPT-style SSE client & interactive controllers
 ```
 
 ---
 
-## 🚀 Key Wholesome Features & Modules
+## Quick Start
 
-### 1. Persistent Multi-Turn Memory & Chat Threads (`SqliteSaver`)
-- Persistent SQLite checkpointing (`unifinder_memory.db`) ensures conversations, state, and thread histories persist across server restarts.
-- Sidebar with **Chat History**: Create new sessions, switch between past conversations, or delete old threads.
-
-### 2. Corrective RAG (C-RAG) on Uploaded Documents
-- **Direct Document Upload**: Upload academic transcripts, CV/resume, or university brochures (`.pdf`, `.docx`, `.txt`).
-- **Automatic Profile Extraction**: Detects CGPA (e.g., 3.75/4.0), IELTS band (e.g., 7.5), and major, auto-populating student parameters.
-- **Relevance Grading**: Evaluates retrieved chunks. If relevant, grounds answers directly in the student's transcript with source citations; if partial or missing, triggers fallback to live search and institutional databases.
-
-### 3. Real-Time Token Streaming (Server-Sent Events)
-- High-speed async generator streaming tokens and step transitions live to the UI (`/api/chat/stream`).
-- Users see the multi-agent system reasoning and writing in real time with a blinking cursor.
-
-### 4. Human-in-the-Loop (HITL) Checkpoints
-- Automated triggers flag decisions requiring human counselor confirmation (e.g., if all matched programs fall into the "Reach" tier or if the budget requires external full-ride scholarships).
-- Displays interactive approval banners with action options before locking application strategies.
-
-### 5. Live Opportunities & Scholarships Feed
-- **Active Programs**: Curated database of premier global awards: **DAAD EPOS (Germany), Erasmus Mundus (EU), Fulbright (USA), Chevening (UK), MEXT (Japan), CSC (China), Australia Awards, Eiffel (France), and Italian DSU**.
-- **Regulatory News Feed**: Live immigration policy alerts (Canadian study permit caps, German Opportunity Card *Chancenkarte*, UK graduate route salary concessions, US 3-year STEM OPT extensions).
-
-### 6. LangSmith Observability & Monitoring
-- Native integration with **LangSmith** for full-stack LLM tracing, latency monitoring, and token analytics (`LANGCHAIN_TRACING_V2=true`).
-
----
-
-## 🎨 Design System: Luxury Navy, Warm Cream & Vibrant Coral
-- **Luxury Deep Navy** (`#0B192C`, `#132A4A`, `#1E3E62`): Navbar, sidebar, headers, data table titles.
-- **Warm Cream** (`#FDFBF7`, `#F7F4EB`, `#FAF3E0`): Clean paper background, subtle card borders, neutral canvas.
-- **Vibrant Coral** (`#FF6B6B`, `#FA5252`, `#E03131`): Action buttons, interactive sliders, progress stepper, highlights.
-
----
-
-## 🔑 How to Generate Free Online LLM API Keys (30 Seconds)
-
-UniFinder AI runs on **100% Free Online LLMs**:
-
-### Option 1: Google Gemini API Key (Recommended)
-1. Go to **[Google AI Studio](https://aistudio.google.com/app/apikey)**.
-2. Sign in with any Google account & click **"Create API Key"**.
-3. Copy the key (`AIzaSy...`) and paste it into `.env` or the web app's **"API Settings"** modal!
-
-### Option 2: Groq Cloud API Key (Ultra-Fast)
-1. Go to **[Groq Console](https://console.groq.com/keys)**.
-2. Sign in & click **"Create API Key"**.
-3. Copy the key (`gsk_...`) and paste it in!
-
----
-
-## 💻 Quick Start & Run Instructions
-
-### 1. Install Dependencies
+### 1. Clone & Install
 ```bash
+git clone https://github.com/taosiff/unifinder-multi-agent.git
+cd unifinder-multi-agent
 pip install -r requirements.txt
 ```
 
-### 2. Configure Keys (Optional)
-Copy `.env.example` to `.env`:
+### 2. Configure Environment
+Copy `.env.example` to `.env` and add **at least one** free LLM key (add multiple for automatic failover):
 ```bash
 cp .env.example .env
 ```
-Add your free `GOOGLE_API_KEY`, `GROQ_API_KEY`, and optional `LANGCHAIN_API_KEY` for LangSmith tracing.
+- `GROQ_API_KEY` — [console.groq.com/keys](https://console.groq.com/keys)
+- `GOOGLE_API_KEY` — [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+- `MISTRAL_API_KEY` — [console.mistral.ai/api-keys](https://console.mistral.ai/api-keys)
+- `COHERE_API_KEY` — [dashboard.cohere.com/api-keys](https://dashboard.cohere.com/api-keys)
+- `DATABASE_URL` *(Optional)* — PostgreSQL URL for cloud persistence (falls back to local SQLite automatically if omitted).
 
-### 3. Start the Server
+### 3. Run Locally
 ```bash
 python run.py
 ```
-Or with Uvicorn:
-```bash
-uvicorn app:app --host 127.0.0.1 --port 8000 --reload
-```
+Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)**.
 
-### 4. Open in Browser
-Visit **`http://127.0.0.1:8000`** to access the complete multi-agent system!
+### 4. Deploy to Render (Free Tier)
+See **[DEPLOYMENT_RENDER.md](DEPLOYMENT_RENDER.md)** for step-by-step instructions using `render.yaml` and free PostgreSQL.
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE).
