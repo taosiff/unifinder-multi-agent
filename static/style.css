@@ -1679,3 +1679,122 @@ a:hover {
     cursor: not-allowed;
     transform: none;
 }
+
+/* ==========================================================================
+   Live Aesthetic Enhancements (Ambient Hero, Ticker, Starter Chips)
+   ========================================================================== */
+.hero-banner {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 18% 20%, rgba(34, 163, 199, 0.28) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(72, 192, 224, 0.20) 0%, transparent 45%),
+        linear-gradient(135deg, var(--gray-900) 0%, var(--blue-900) 55%, var(--blue-800) 100%);
+}
+
+.hero-banner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
+    pointer-events: none;
+}
+
+.hero-banner > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Live Global Study Pulse Marquee */
+.live-ticker-wrap {
+    overflow: hidden;
+    background: var(--surface-white);
+    border: 1px solid var(--gray-200);
+    border-radius: 50px;
+    padding: 0.45rem 0;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--card-shadow);
+    position: relative;
+}
+
+.live-ticker-track {
+    display: flex;
+    width: max-content;
+    gap: 2.2rem;
+    animation: tickerScroll 34s linear infinite;
+    padding-left: 1.5rem;
+}
+
+.live-ticker-wrap:hover .live-ticker-track {
+    animation-play-state: paused;
+}
+
+@keyframes tickerScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    white-space: nowrap;
+}
+
+.ticker-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--blue-600);
+}
+
+/* Starter Prompt Chips inside Chat Welcome */
+.starter-chips-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.15rem;
+}
+
+.starter-chip {
+    background: var(--surface-white);
+    border: 1px solid var(--gray-200);
+    color: var(--gray-800);
+    padding: 0.48rem 0.85rem;
+    border-radius: 50px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+.starter-chip:hover {
+    background: var(--blue-50);
+    border-color: var(--blue-600);
+    color: var(--blue-900);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 92, 117, 0.12);
+}
+
+/* Live Destination Clock Pill */
+.live-hub-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--blue-800);
+    background: var(--blue-50);
+    border: 1px solid #BAE6FD;
+    padding: 0.25rem 0.65rem;
+    border-radius: 50px;
+}

@@ -27,6 +27,9 @@ document.addEventListener("DOMContentLoaded", () => {
     loadShortlist();
     loadOpportunities();
     recalculateROI();
+    startLiveHubClock();
+    const countryEl = document.getElementById("countryInput");
+    if (countryEl) countryEl.addEventListener("change", updateLiveHubClock);
     const autoWipeEl = document.getElementById("autoWipeOnExit");
     if (autoWipeEl) autoWipeEl.checked = autoWipeEnabled;
 });
@@ -116,8 +119,53 @@ function renderWelcomeChat() {
             </div>
             <h3>Ask anything about your study abroad journey</h3>
             <p>Upload your CV on the left or type a question below. You can ask follow-up questions anytime — your session memory is saved automatically.</p>
+            <div class="starter-chips-grid">
+                <button class="starter-chip" onclick="sendStarterPrompt('Find tuition-free MSc AI & Computer Science in Germany with PR outlook')">Tuition-free MSc in Germany</button>
+                <button class="starter-chip" onclick="sendStarterPrompt('Best MSc Data Science in Canada with 3-year PGWP and job market')">Data Science in Canada + PR</button>
+                <button class="starter-chip" onclick="sendStarterPrompt('Compare living costs, scholarships & sponsored visas in UK vs Netherlands')">UK vs Netherlands Comparison</button>
+            </div>
         </div>
     `;
+}
+
+function sendStarterPrompt(promptText) {
+    const input = document.getElementById("userQuery");
+    if (input) {
+        input.value = promptText;
+        runFinder();
+    }
+}
+
+const HUB_TIMEZONES = {
+    "Germany": { city: "Berlin", tz: "Europe/Berlin" },
+    "United States": { city: "Boston", tz: "America/New_York" },
+    "Canada": { city: "Toronto", tz: "America/Toronto" },
+    "United Kingdom": { city: "London", tz: "Europe/London" },
+    "Australia": { city: "Melbourne", tz: "Australia/Melbourne" },
+    "Netherlands": { city: "Amsterdam", tz: "Europe/Amsterdam" },
+    "Sweden": { city: "Stockholm", tz: "Europe/Stockholm" },
+    "Singapore": { city: "Singapore", tz: "Asia/Singapore" },
+    "France": { city: "Paris", tz: "Europe/Paris" }
+};
+
+function updateLiveHubClock() {
+    const el = document.getElementById("liveHubClock");
+    if (!el) return;
+    const country = document.getElementById("countryInput")?.value || "";
+    const hub = HUB_TIMEZONES[country] || { city: "Global", tz: "UTC" };
+    try {
+        const nowStr = new Intl.DateTimeFormat("en-US", {
+            timeZone: hub.tz, hour: "2-digit", minute: "2-digit", hour12: false
+        }).format(new Date());
+        el.textContent = `${hub.city} ${nowStr}`;
+    } catch {
+        el.textContent = `${hub.city} Live`;
+    }
+}
+
+function startLiveHubClock() {
+    updateLiveHubClock();
+    setInterval(updateLiveHubClock, 15000);
 }
 
 function appendChatMessage(role, content) {
