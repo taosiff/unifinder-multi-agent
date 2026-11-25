@@ -601,16 +601,20 @@ a:hover {
 }
 
 /* ==========================================================================
-   Counselor Grid & Profile Card
+   Counselor Grid & Profile Card (Equal-Height + 3D Depth)
    ========================================================================== */
 .counselor-grid {
     display: grid;
     grid-template-columns: 340px 1fr;
     gap: 1.5rem;
-    align-items: start;
+    align-items: stretch;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1180px) {
+    .counselor-grid { grid-template-columns: 300px 1fr; gap: 1.15rem; }
+}
+
+@media (max-width: 920px) {
     .counselor-grid { grid-template-columns: 1fr; }
 }
 
@@ -620,16 +624,26 @@ a:hover {
     border-top: 3px solid var(--blue-700);
     border-radius: var(--radius-xl);
     padding: 1.35rem;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    box-shadow:
+        0 14px 30px -10px rgba(15, 23, 42, 0.12),
+        0 4px 10px -2px rgba(15, 23, 42, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* Dark Cool Gray Profile Anchor in Counselor Grid */
+/* Dark Cool Gray Profile Anchor in Counselor Grid (3D Elevated Panel) */
 .counselor-grid > .sidebar-card {
-    background: linear-gradient(180deg, #1E252E 0%, #152632 100%);
-    border: 1px solid #2D3B48;
-    border-top: 3px solid var(--blue-500);
+    background: linear-gradient(165deg, #212A34 0%, #142430 65%, #0D3546 100%);
+    border: 1px solid #334352;
+    border-top: 3px solid var(--blue-400);
+    border-bottom: 4px solid #091720;
     color: var(--ghost-white);
-    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+    box-shadow:
+        0 22px 44px -12px rgba(7, 25, 36, 0.35),
+        0 8px 18px -6px rgba(15, 23, 42, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .counselor-grid > .sidebar-card .card-header-bar {
@@ -884,7 +898,9 @@ a:hover {
 .main-column {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.15rem;
+    height: 100%;
+    min-width: 0;
 }
 
 .input-card {
@@ -943,26 +959,37 @@ a:hover {
 }
 
 .primary-btn {
-    background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-900) 100%);
+    background: linear-gradient(180deg, var(--blue-600) 0%, var(--blue-800) 100%);
     color: #FFFFFF;
-    border: none;
-    padding: 0.78rem 1.5rem;
+    border: 1px solid var(--blue-700);
+    border-bottom: 3px solid var(--blue-950);
+    padding: 0.76rem 1.45rem;
     font-size: 0.92rem;
     font-weight: 700;
     border-radius: var(--radius-md);
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(13, 92, 117, 0.28);
+    box-shadow:
+        0 8px 18px -4px rgba(13, 92, 117, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    transition: all 0.2s ease;
+    transition: all 0.16s ease;
 }
 
 .primary-btn:hover {
-    background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-800) 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(13, 92, 117, 0.36);
+    background: linear-gradient(180deg, var(--blue-500) 0%, var(--blue-700) 100%);
+    transform: translateY(-2px);
+    box-shadow:
+        0 12px 24px -4px rgba(13, 92, 117, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.primary-btn:active {
+    transform: translateY(1px);
+    border-bottom-width: 1px;
+    box-shadow: 0 3px 8px rgba(13, 92, 117, 0.3);
 }
 
 .primary-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -1248,19 +1275,25 @@ a:hover {
     background: var(--ghost-white);
     border: 1px solid var(--gray-300);
     border-top: 3px solid var(--blue-700);
+    border-bottom: 3px solid var(--gray-300);
     border-radius: var(--radius-lg);
     padding: 1.35rem;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
-    transition: all 0.2s ease;
+    box-shadow:
+        0 10px 24px -8px rgba(15, 23, 42, 0.10),
+        0 2px 6px rgba(15, 23, 42, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 
 .opp-card:hover, .pr-card:hover {
-    box-shadow: var(--hover-shadow);
-    transform: translateY(-2px);
-    border-color: var(--blue-500);
+    box-shadow:
+        0 18px 36px -10px rgba(13, 92, 117, 0.20),
+        0 6px 14px -4px rgba(15, 23, 42, 0.08);
+    transform: translateY(-4px);
+    border-color: var(--blue-600);
 }
 
 .opp-card-header {
@@ -1572,11 +1605,17 @@ a:hover {
 .chat-workspace {
     background: var(--ghost-white);
     border: 1px solid var(--gray-300);
+    border-bottom: 4px solid var(--gray-300);
     border-radius: var(--radius-xl);
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    box-shadow:
+        0 20px 42px -12px rgba(15, 23, 42, 0.14),
+        0 6px 16px -4px rgba(13, 92, 117, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
     display: flex;
     flex-direction: column;
-    height: 640px;
+    flex: 1;
+    min-height: 680px;
+    max-height: 820px;
     overflow: hidden;
 }
 
@@ -1763,24 +1802,125 @@ a:hover {
 }
 
 .send-icon-btn {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
-    border: none;
-    background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-900) 100%);
+    border: 1px solid var(--blue-700);
+    border-bottom: 3px solid var(--blue-950);
+    background: linear-gradient(180deg, var(--blue-600) 0%, var(--blue-800) 100%);
     color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
-    transition: all 0.2s ease;
-    box-shadow: 0 3px 10px rgba(13, 92, 117, 0.25);
+    transition: all 0.16s ease;
+    box-shadow:
+        0 6px 14px rgba(13, 92, 117, 0.30),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .send-icon-btn:hover {
-    background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-800) 100%);
-    transform: translateY(-1px);
+    background: linear-gradient(180deg, var(--blue-500) 0%, var(--blue-700) 100%);
+    transform: translateY(-2px);
+}
+
+.send-icon-btn:active {
+    transform: translateY(1px);
+    border-bottom-width: 1px;
+}
+
+/* ==========================================================================
+   Full Multi-Device Responsiveness (Phone, Tablet, Laptop, Desktop)
+   ========================================================================== */
+html, body {
+    overflow-x: hidden;
+}
+
+.hero-heading {
+    font-size: clamp(1.35rem, 2.8vw, 1.95rem);
+}
+
+.dashboard-tabs {
+    scrollbar-width: none;
+}
+.dashboard-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 920px) {
+    .app-wrapper {
+        padding: 1rem 0.85rem 3rem;
+    }
+    .chat-workspace {
+        min-height: 520px;
+        height: 70vh;
+    }
+    .hero-banner {
+        padding: 1.15rem 1.1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .navbar {
+        padding: 0.65rem 0.9rem;
+    }
+    .brand-sub,
+    .langsmith-tag {
+        display: none;
+    }
+    .brand-title {
+        font-size: 1.18rem;
+    }
+    .key-btn,
+    .status-badge {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.72rem;
+    }
+    .layout-container {
+        padding: 0 0.45rem;
+    }
+    .app-wrapper {
+        padding: 0.8rem 0.45rem 2.5rem;
+    }
+    .hero-banner {
+        border-radius: var(--radius-lg);
+        padding: 1rem 0.9rem;
+        margin-bottom: 1rem;
+    }
+    .hero-desc {
+        font-size: 0.82rem;
+    }
+    .dashboard-tabs {
+        padding: 0.3rem;
+        margin-bottom: 1rem;
+    }
+    .tab-btn {
+        padding: 0.52rem 0.85rem;
+        font-size: 0.8rem;
+    }
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    .chat-workspace {
+        min-height: 460px;
+        height: 72vh;
+        border-radius: var(--radius-lg);
+    }
+    .chat-feed {
+        padding: 0.9rem;
+    }
+    .chat-bubble-user,
+    .chat-bubble-assistant {
+        max-width: 96%;
+    }
+    .opps-grid,
+    .pr-cards-grid,
+    .news-grid,
+    .roi-stat-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .send-icon-btn:disabled {
@@ -2003,27 +2143,6 @@ a:hover {
                     Upload your CV or enter your preferences below — our live agents check universities, tuition, student reviews, scholarships, and post-study visas.
                 </p>
             </section>
-
-            <!-- Live Global Study Pulse Marquee -->
-            <div class="live-ticker-wrap" aria-label="Live Global Study Destinations">
-                <div class="live-ticker-track">
-                    <span class="ticker-item"><span class="ticker-dot"></span>Germany • €0 Public Tuition • 18-Mo Job Seeker</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>Canada • 3-Yr PGWP • Express Entry PR</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>USA • 36-Mo STEM OPT • Top Tech Salaries</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>UK • 1-Yr Master's • 2-Yr Graduate Route</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>Australia • Up to 4-Yr 485 Visa • Regional PR Bonus</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>Netherlands • 1-Yr Orientation Year • 90%+ English</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>22,900+ Global Institutions • Live Scholarships</span>
-                    <!-- Duplicate for seamless infinite loop -->
-                    <span class="ticker-item"><span class="ticker-dot"></span>Germany • €0 Public Tuition • 18-Mo Job Seeker</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>Canada • 3-Yr PGWP • Express Entry PR</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>USA • 36-Mo STEM OPT • Top Tech Salaries</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>UK • 1-Yr Master's • 2-Yr Graduate Route</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>Australia • Up to 4-Yr 485 Visa • Regional PR Bonus</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>Netherlands • 1-Yr Orientation Year • 90%+ English</span>
-                    <span class="ticker-item"><span class="ticker-dot"></span>22,900+ Global Institutions • Live Scholarships</span>
-                </div>
-            </div>
 
             <!-- Navigation Tabs -->
             <nav class="dashboard-tabs">
