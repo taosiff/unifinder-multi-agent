@@ -32,7 +32,13 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 function toggleThreadSidebar() {
     const sidebar = document.getElementById("threadSidebar");
-    sidebar.classList.toggle("collapsed");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    if (sidebar) {
+        const isCollapsed = sidebar.classList.toggle("collapsed");
+        if (backdrop) {
+            backdrop.classList.toggle("active", !isCollapsed);
+        }
+    }
 }
 
 async function loadThreadsList() {
@@ -57,7 +63,7 @@ function renderThreadsList(threads) {
     container.innerHTML = threads.map(t => `
         <div class="thread-item ${t.thread_id === currentThreadId ? 'active' : ''}" onclick="switchThread('${t.thread_id}', '${escapeQuote(t.title)}')">
             <span class="thread-title-text" title="${t.title}">💬 ${t.title}</span>
-            <button class="del-thread-btn" onclick="event.stopPropagation(); deleteThread('${t.thread_id}')" title="Delete thread">×</button>
+            <button class="del-thread-btn" onclick="event.stopPropagation(); deleteThread('${t.thread_id}')" title="Delete conversation">✕</button>
         </div>
     `).join("");
 }
@@ -90,6 +96,9 @@ function switchThread(threadId, title) {
     loadThreadsList();
     loadSessionDocs();
     showToast(`Switched to: ${title}`);
+    if (window.innerWidth <= 1024) {
+        toggleThreadSidebar();
+    }
 }
 
 async function deleteThread(threadId) {
