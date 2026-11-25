@@ -4,11 +4,14 @@
 
 **An autonomous LangGraph multi-agent platform that turns a student's CV or study goals into verified university matches, live scraped admissions data, student reviews, scholarship opportunities, post-study work visa roadmaps, and career ROI forecasts.**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?style=flat-square&logo=render&logoColor=1E242B)](https://unifinder-multi-agent.onrender.com/)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-0D5C75?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-1E242B?style=flat-square)](https://langchain-ai.github.io/langgraph/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Cloud%20Ready-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+
+**[Live Application: unifinder-multi-agent.onrender.com](https://unifinder-multi-agent.onrender.com/)**
 
 </div>
 
