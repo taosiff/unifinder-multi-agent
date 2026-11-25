@@ -34,8 +34,10 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 
 # Internal Tools, Database & RAG
+from concurrent.futures import ThreadPoolExecutor
 from database import search_universities
 from tools.mastersportal_tool import scrape_studyportals
+from tools.univs_tool import search_univs_programs
 from tools.web_intelligence import search_web_knowledge
 from tools.pr_visa_tool import evaluate_immigration_pathway
 from tools.career_roi_tool import calculate_roi_and_career_outlook
@@ -130,6 +132,8 @@ class UniFinderState(TypedDict):
     # Discovery Subgraph outputs
     discovered_universities: List[Dict[str, Any]]
     portal_scraping_result: Dict[str, Any]
+    univs_catalogue_results: List[Dict[str, Any]]
+    web_search_results: str
     # Assessment & Opportunity outputs
     eligibility_analysis: Dict[str, Any]
     financial_analysis: Dict[str, Any]
@@ -228,26 +232,39 @@ def discovery_subgraph_node(state: UniFinderState):
     budget = state.get("budget_usd", 0)
     gpa = state.get("user_gpa", 0.0)
 
-    # Scrape studyportals
-    portal_data = scrape_studyportals(degree_level=degree, subject=subject, country=country)
+    web_query = f"top universities {degree} {subject} {country} tuition admission".strip()
 
-    # Search curated database
-    db_results = search_universities(
-        degree_level=degree,
-        subject=subject,
-        country=country,
-        max_tuition=budget if budget > 5000 else None,
-        user_gpa=gpa if gpa > 0 else None,
-        limit=6
-    )
+    # Execute Discovery Tools in Parallel (Studyportals, Univs.com API, Web Search, Database)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_portal = executor.submit(scrape_studyportals, degree_level=degree, subject=subject, country=country)
+        future_univs = executor.submit(search_univs_programs, query=subject, country=country, degree_level=degree, limit=8)
+        future_web = executor.submit(search_web_knowledge, web_query, 4)
+        future_db = executor.submit(
+            search_universities,
+            degree_level=degree,
+            subject=subject,
+            country=country,
+            max_tuition=budget if budget > 5000 else None,
+            user_gpa=gpa if gpa > 0 else None,
+            limit=6
+        )
+
+        portal_data = future_portal.result()
+        univs_resp = future_univs.result()
+        web_data = future_web.result()
+        db_results = future_db.result()
 
     if not db_results and country:
         db_results = search_universities(degree_level=degree, subject=subject, country=None, limit=6)
 
+    univs_programs = univs_resp.get("programs", []) if isinstance(univs_resp, dict) else []
+
     return {
         "discovered_universities": db_results,
         "portal_scraping_result": portal_data,
-        "messages": [AIMessage(content=f"Discovery Subgraph: Matched {len(db_results)} institutions.")]
+        "univs_catalogue_results": univs_programs,
+        "web_search_results": web_data,
+        "messages": [AIMessage(content=f"Discovery Subgraph (Parallel): Matched {len(db_results)} DB institutions & {len(univs_programs)} live Univs.com programs.")]
     }
 
 
@@ -345,6 +362,8 @@ def synthesis_counselor_node(state: UniFinderState):
     llm = get_llm()
     user_query = state["user_query"]
     unis = state.get("discovered_universities", [])
+    univs_live = state.get("univs_catalogue_results", [])
+    web_search = state.get("web_search_results", "")
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
     career = state.get("career_roi_analysis", {})
@@ -368,8 +387,14 @@ STUDENT PROFILE CONSTRAINTS:
 
 {f"DOCUMENT EVIDENCE (FROM UPLOADED STUDENT TRANSCRIPT/CV VIA CORRECTIVE RAG):\n{crag_grounding}\n" if crag_grounding else ""}
 
-DISCOVERED UNIVERSITIES:
+DISCOVERED UNIVERSITIES (CURATED DATABASE):
 {json.dumps(unis[:4], indent=2, default=str)}
+
+LIVE UNIVS.COM CATALOGUE MATCHES (22,900+ INSTITUTES):
+{json.dumps(univs_live[:5], indent=2, default=str)}
+
+LIVE WEB INTELLIGENCE (DUCKDUCKGO / GOOGLE PARALLEL SEARCH):
+{web_search[:1200] if web_search else "N/A"}
 
 ADMISSION CHANCE TIERS:
 {json.dumps(eligibility.get('classified_universities', []), indent=2, default=str)}
@@ -429,6 +454,8 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
     subject = state.get("subject", "Computer Science")
     country = state.get("country_pref") or "Global Destinations"
     unis = state.get("discovered_universities", [])
+    univs_live = state.get("univs_catalogue_results", [])
+    web_search = state.get("web_search_results", "")
     eligibility = state.get("eligibility_analysis", {})
     immigration = state.get("immigration_analysis", {})
     career = state.get("career_roi_analysis", {})
@@ -606,6 +633,8 @@ def run_unifinder_agent(
         "crag_grounding": "",
         "discovered_universities": [],
         "portal_scraping_result": {},
+        "univs_catalogue_results": [],
+        "web_search_results": "",
         "eligibility_analysis": {},
         "financial_analysis": {},
         "immigration_analysis": {},
@@ -628,6 +657,8 @@ def run_unifinder_agent(
         "dossier": result.get("dossier_markdown", ""),
         "discovered_universities": result.get("discovered_universities", []),
         "portal_scraping_result": result.get("portal_scraping_result", {}),
+        "univs_catalogue_results": result.get("univs_catalogue_results", []),
+        "web_search_results": result.get("web_search_results", ""),
         "eligibility_analysis": result.get("eligibility_analysis", {}),
         "immigration_analysis": result.get("immigration_analysis", {}),
         "career_roi_analysis": result.get("career_roi_analysis", {}),

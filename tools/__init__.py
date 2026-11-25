@@ -24,6 +24,12 @@ from tools.living_cost_tool import (
     get_city_living_cost,
     get_embassy_visa_checklist
 )
+from tools.univs_tool import (
+    search_univs_programs,
+    search_univs_institutes,
+    get_univs_addresses,
+    UNIVS_ADDRESSES
+)
 
 __all__ = [
     "scrape_studyportals",
@@ -45,5 +51,9 @@ __all__ = [
     "search_live_scholarship_opportunities",
     "convert_currency",
     "get_city_living_cost",
-    "get_embassy_visa_checklist"
+    "get_embassy_visa_checklist",
+    "search_univs_programs",
+    "search_univs_institutes",
+    "get_univs_addresses",
+    "UNIVS_ADDRESSES"
 ]

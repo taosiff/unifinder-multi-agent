@@ -36,6 +36,7 @@ from database import (
 from tools.sop_reviewer_tool import review_statement_of_purpose
 from tools.rag_engine import index_user_document, get_session_documents
 from tools.opportunities_tool import get_live_opportunities, get_immigration_news
+from tools.univs_tool import search_univs_programs, search_univs_institutes, get_univs_addresses
 
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
@@ -344,6 +345,34 @@ async def get_universities(
         limit=30
     )
     return {"success": True, "count": len(results), "universities": results}
+
+
+@app.get("/api/univs/addresses")
+async def univs_addresses():
+    """Returns official Univs.com REST API, MCP server, OpenAPI & LLM documentation URLs."""
+    return {"success": True, "addresses": get_univs_addresses()}
+
+
+@app.get("/api/univs/programs")
+async def univs_programs(
+    q: str = "Computer Science",
+    country: str = "",
+    degree: str = "MSc",
+    scholarship: bool = False,
+    page: int = 1
+):
+    return search_univs_programs(
+        query=q,
+        country=country,
+        degree_level=degree,
+        scholarship_only=scholarship,
+        page=page
+    )
+
+
+@app.get("/api/univs/institutes")
+async def univs_institutes(q: str = "", country: str = "", page: int = 1):
+    return search_univs_institutes(query=q, country=country, page=page)
 
 
 @app.post("/api/shortlist")

@@ -1046,3 +1046,45 @@ function showToast(msg) {
         toast.classList.add("hidden");
     }, 3500);
 }
+
+// ==========================================
+// Univs.com Live Global Catalogue Search
+// ==========================================
+async function searchUnivsLive() {
+    const query = document.getElementById("univsQueryInput")?.value || "Computer Science";
+    const country = document.getElementById("univsCountryInput")?.value || "";
+    const degree = document.getElementById("univsDegreeSelect")?.value || "MSc";
+    const container = document.getElementById("univsResultsContainer");
+
+    if (!container) return;
+    container.innerHTML = `<div style="color:var(--text-muted); padding:0.5rem;">⏳ Searching Univs.com public catalogue...</div>`;
+
+    try {
+        const params = new URLSearchParams({ q: query, degree: degree });
+        if (country.trim()) params.set("country", country.trim());
+
+        const res = await fetch(`/api/univs/programs?${params.toString()}`);
+        const data = await res.json();
+
+        if (data.success && data.programs && data.programs.length > 0) {
+            container.innerHTML = data.programs.map(p => `
+                <div class="opp-card">
+                    <div>
+                        <div class="opp-card-header">
+                            <h4>${p.program_name}</h4>
+                            ${p.scholarship_available ? '<span class="opp-funding-tag">Scholarship Listed</span>' : '<span class="purple-pill">' + p.degree + '</span>'}
+                        </div>
+                        <div class="opp-detail-row">🏛️ <strong>${p.university_name}</strong></div>
+                        <div class="opp-detail-row">📍 ${p.city ? p.city + ', ' : ''}${p.country}</div>
+                        <div class="opp-detail-row">⏱️ Duration: ${p.duration}</div>
+                    </div>
+                    <a href="${p.url}" target="_blank" class="opp-apply-btn">View on Univs.com ↗</a>
+                </div>
+            `).join("");
+        } else {
+            container.innerHTML = `<div style="color:var(--text-muted); font-size:0.88rem;">No matching programs found on Univs.com for "${query}" (${degree}). Try broadening your search.</div>`;
+        }
+    } catch (e) {
+        container.innerHTML = `<div class="alert-box error">Error fetching Univs.com catalogue: ${e.message}</div>`;
+    }
+}

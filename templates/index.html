@@ -2076,7 +2076,7 @@ a:hover {
                                 </div>
                                 <div class="step-item" id="step-discovery">
                                     <span class="step-dot"></span>
-                                    <span class="step-label">3. MastersPortal Scraper</span>
+                                    <span class="step-label">3. Univs.com + MastersPortal (Parallel)</span>
                                 </div>
                                 <div class="step-item" id="step-opps">
                                     <span class="step-dot"></span>
@@ -2234,6 +2234,48 @@ a:hover {
                             <tr><td colspan="9" class="loading-cell">Loading university matrix...</td></tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Univs.com Live Catalogue & Official Addresses -->
+                <div class="sidebar-card" style="margin-top: 2rem;">
+                    <div class="card-header-bar">
+                        <h3>🌍 Univs.com Live Global Catalogue (Parallel Discovery Engine)</h3>
+                        <span class="purple-pill">22,943+ Institutes • 256,464+ Programs</span>
+                    </div>
+                    <div class="filter-bar" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.2rem;">
+                        <input type="text" id="univsQueryInput" placeholder="Search live global programs (e.g. Data Science, Robotics)..." value="Computer Science" style="flex:2; min-width:220px; padding:0.65rem 0.9rem; border:1.5px solid var(--sand-200); border-radius:8px;">
+                        <input type="text" id="univsCountryInput" placeholder="Country (e.g. Germany, Canada)" style="flex:1; min-width:150px; padding:0.65rem 0.9rem; border:1.5px solid var(--sand-200); border-radius:8px;">
+                        <select id="univsDegreeSelect" style="padding:0.65rem 0.9rem; border:1.5px solid var(--sand-200); border-radius:8px; background:var(--sand-25);">
+                            <option value="MSc">Master's (MSc)</option>
+                            <option value="BSc">Bachelor's (BSc)</option>
+                            <option value="PhD">Doctorate (PhD)</option>
+                        </select>
+                        <button class="primary-btn" onclick="searchUnivsLive()" style="padding:0.65rem 1.25rem;">🔍 Search Univs.com</button>
+                    </div>
+                    <div id="univsResultsContainer" class="opps-grid" style="margin-bottom: 1.5rem;">
+                        <div style="color:var(--text-muted); font-size:0.88rem;">Click <strong>Search Univs.com</strong> to query live programs in real time, or run the AI Admissions Counselor to query Univs.com, MastersPortal, and Web Search in parallel.</div>
+                    </div>
+
+                    <details style="background:var(--sand-50); border:1px solid var(--sand-200); border-radius:10px; padding:1rem;">
+                        <summary style="cursor:pointer; font-weight:700; color:var(--forest-900); font-size:0.9rem;">🔗 Official Univs.com REST API, MCP Server & Documentation Addresses</summary>
+                        <div class="table-responsive" style="margin-top:0.85rem;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>Resource</th><th>Official Address</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><strong>REST API base</strong></td><td><a href="https://univs.com/wp-json/univs-agent/v1" target="_blank">https://univs.com/wp-json/univs-agent/v1</a></td></tr>
+                                    <tr><td><strong>MCP server (Streamable HTTP)</strong></td><td><a href="https://univs.com/wp-json/univs-agent/v1/mcp" target="_blank">https://univs.com/wp-json/univs-agent/v1/mcp</a></td></tr>
+                                    <tr><td><strong>OpenAPI 3.1 description</strong></td><td><a href="https://univs.com/.well-known/openapi.json" target="_blank">https://univs.com/.well-known/openapi.json</a></td></tr>
+                                    <tr><td><strong>MCP server card</strong></td><td><a href="https://univs.com/.well-known/mcp.json" target="_blank">https://univs.com/.well-known/mcp.json</a></td></tr>
+                                    <tr><td><strong>Short guide for language models</strong></td><td><a href="https://univs.com/llms.txt" target="_blank">https://univs.com/llms.txt</a></td></tr>
+                                    <tr><td><strong>Full guide for language models</strong></td><td><a href="https://univs.com/llms-full.txt" target="_blank">https://univs.com/llms-full.txt</a></td></tr>
+                                    <tr><td><strong>Setting up ChatGPT, Claude & assistants</strong></td><td><a href="https://univs.com/ai-assistants/" target="_blank">https://univs.com/ai-assistants/</a></td></tr>
+                                    <tr><td><strong>API terms of use</strong></td><td><a href="https://univs.com/api-terms/" target="_blank">https://univs.com/api-terms/</a></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
                 </div>
             </section>
 
