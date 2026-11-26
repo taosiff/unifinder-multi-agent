@@ -89,7 +89,7 @@ function toggleThreadSidebar() {
     if (sidebar) {
         const isCollapsed = sidebar.classList.toggle("collapsed");
         if (backdrop) {
-            backdrop.classList.toggle("active", !isCollapsed);
+            backdrop.classList.toggle("active", !isCollapsed && window.innerWidth <= 960);
         }
     }
 }
@@ -665,15 +665,18 @@ function displayDossierResults(data) {
     const dossierContent = document.getElementById("dossierContent");
     const threadDisplay = document.getElementById("threadDisplay");
 
-    if (typeof marked !== "undefined") {
-        dossierContent.innerHTML = marked.parse(data.dossier);
-    } else {
-        dossierContent.innerText = data.dossier;
+    if (dossierContent) {
+        if (typeof marked !== "undefined") {
+            dossierContent.innerHTML = marked.parse(data.dossier);
+        } else {
+            dossierContent.innerText = data.dossier;
+        }
     }
 
-    threadDisplay.textContent = `Thread: ${data.thread_id}`;
-    dossierCard.classList.remove("hidden");
-    metricsBanner.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (threadDisplay) threadDisplay.textContent = `Thread: ${data.thread_id}`;
+    if (dossierCard) dossierCard.classList.remove("hidden");
+    const metricsBanner = document.getElementById("metricsBanner");
+    if (metricsBanner) metricsBanner.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function handleHITLState(data) {
