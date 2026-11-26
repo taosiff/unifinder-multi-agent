@@ -32,7 +32,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (countryEl) countryEl.addEventListener("change", updateLiveHubClock);
     const autoWipeEl = document.getElementById("autoWipeOnExit");
     if (autoWipeEl) autoWipeEl.checked = autoWipeEnabled;
+
+    // Start sidebar collapsed on mobile/tablet, open on desktop
+    const sidebar = document.getElementById("threadSidebar");
+    if (sidebar && window.innerWidth <= 960) {
+        sidebar.classList.add("collapsed");
+    }
 });
+
+function autoResizeTextarea(el) {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+}
 
 function toggleAutoWipe(enabled) {
     autoWipeEnabled = !!enabled;
@@ -389,6 +401,27 @@ function switchTab(tabName) {
 
     const targetContent = document.getElementById(`tab-${tabName}`);
     if (targetContent) targetContent.classList.add("active");
+
+    const titleMap = {
+        "counselor": "UniFinder Counselor",
+        "opportunities": "Live Scholarships & Grants",
+        "matrix": "Universities Explorer",
+        "pr-visa": "PR & Post-Study Visas",
+        "roi": "Career ROI Forecaster",
+        "sop": "SOP Reviewer",
+        "shortlist": "Saved Wishlist"
+    };
+    const titleEl = document.getElementById("activeViewTitle");
+    if (titleEl && titleMap[tabName]) titleEl.textContent = titleMap[tabName];
+
+    if (window.innerWidth <= 960) {
+        const sidebar = document.getElementById("threadSidebar");
+        const backdrop = document.getElementById("sidebarBackdrop");
+        if (sidebar && !sidebar.classList.contains("collapsed")) {
+            sidebar.classList.add("collapsed");
+            if (backdrop) backdrop.classList.remove("active");
+        }
+    }
 }
 
 function selectDegree(degree) {

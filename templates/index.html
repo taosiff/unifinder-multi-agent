@@ -2101,225 +2101,770 @@ html, body {
     border-radius: 50px;
 }
 
+/* ==========================================================================
+   ChatGPT-Style Unified Sidebar & Full-Viewport Workspace Overrides
+   ========================================================================== */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #F8FAFC;
+}
+
+.app-footer { display: none !important; }
+
+.layout-container {
+    display: flex !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: relative;
+}
+
+/* Unified Left Sidebar (ChatGPT-style) */
+.thread-sidebar {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 288px !important;
+    min-width: 288px !important;
+    height: 100dvh !important;
+    background: linear-gradient(180deg, #0F172A 0%, #0A1929 100%) !important;
+    color: #E2E8F0 !important;
+    border-right: 1px solid rgba(148, 163, 184, 0.14) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0.75rem !important;
+    gap: 0.65rem !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    transition: width 0.25s cubic-bezier(0.22, 1, 0.36, 1), min-width 0.25s cubic-bezier(0.22, 1, 0.36, 1), padding 0.25s ease, transform 0.25s ease !important;
+    z-index: 60 !important;
+    box-shadow: 4px 0 24px rgba(2, 6, 23, 0.18) !important;
+}
+
+.thread-sidebar.collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-right: none !important;
+    overflow: hidden !important;
+}
+
+.sidebar-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.25rem 0.25rem 0.35rem;
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #F8FAFC;
+    letter-spacing: -0.02em;
+}
+
+.sidebar-logo-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #168AAD 0%, #0D5C75 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(22, 138, 173, 0.35);
+}
+
+.sidebar-icon-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #CBD5E1;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.sidebar-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #FFFFFF;
+}
+
+.new-chat-btn {
+    width: 100%;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.62rem 0.85rem !important;
+    border-radius: 10px !important;
+    background: linear-gradient(135deg, #168AAD 0%, #0D5C75 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(72, 192, 224, 0.35) !important;
+    font-weight: 600 !important;
+    font-size: 0.86rem !important;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(13, 92, 117, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.new-chat-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(22, 138, 173, 0.45);
+}
+
+/* Vertical Sidebar Navigation */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.sidebar-nav .tab-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.52rem 0.7rem;
+    border-radius: 9px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94A3B8;
+    font-size: 0.84rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.16s ease;
+}
+
+.sidebar-nav .tab-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #F1F5F9;
+}
+
+.sidebar-nav .tab-btn.active {
+    background: rgba(22, 138, 173, 0.22);
+    border-color: rgba(72, 192, 224, 0.32);
+    color: #FFFFFF;
+    font-weight: 600;
+}
+
+/* Sidebar Accordion for Profile & Filters */
+.sidebar-accordion {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 11px;
+    padding: 0.45rem 0.65rem;
+}
+
+.sidebar-accordion summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #E2E8F0;
+    padding: 0.2rem 0;
+    user-select: none;
+}
+
+.sidebar-accordion summary::-webkit-details-marker { display: none; }
+
+.sidebar-accordion-body {
+    margin-top: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.sidebar-accordion-body label {
+    font-size: 0.72rem !important;
+    color: #94A3B8 !important;
+    margin-bottom: 0.2rem !important;
+}
+
+.sidebar-accordion-body input,
+.sidebar-accordion-body select {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border: 1px solid rgba(148, 163, 184, 0.24) !important;
+    color: #F8FAFC !important;
+    font-size: 0.8rem !important;
+    padding: 0.42rem 0.55rem !important;
+    border-radius: 8px !important;
+}
+
+.sidebar-accordion-body .segmented-control {
+    background: rgba(15, 23, 42, 0.7);
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+.sidebar-accordion-body .segment-btn {
+    color: #94A3B8;
+    font-size: 0.76rem;
+    padding: 0.34rem 0.4rem;
+}
+
+.sidebar-accordion-body .segment-btn.active {
+    background: #168AAD;
+    color: #fff;
+}
+
+.sidebar-accordion-body .chip {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(148, 163, 184, 0.2);
+    color: #CBD5E1;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.5rem;
+}
+
+.sidebar-accordion-body .chip:hover {
+    background: rgba(22, 138, 173, 0.28);
+    color: #fff;
+}
+
+.thread-section-label {
+    font-size: 0.69rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748B !important;
+    font-weight: 700;
+    margin: 0.35rem 0.25rem 0.15rem !important;
+}
+
+.threads-list {
+    flex: 1;
+    min-height: 70px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.sidebar-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+}
+
+/* Main Content Shell */
+.app-wrapper {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    background: radial-gradient(circle at top right, #EEF8FC 0%, #F8FAFC 45%, #F1F5F9 100%);
+}
+
+/* Minimalist Top Bar (ChatGPT-style) */
+.chat-shell-topbar {
+    height: 54px;
+    min-height: 54px;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid #E2E8F0;
+    z-index: 20;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.topbar-menu-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    color: #1E242B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    transition: all 0.16s ease;
+}
+
+.topbar-menu-btn:hover {
+    background: #F1F5F9;
+    border-color: #CBD5E1;
+}
+
+.topbar-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.topbar-title-text {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0F172A;
+    white-space: nowrap;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.topbar-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.38rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid #E2E8F0;
+    background: #FFFFFF;
+    color: #334155;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: all 0.16s ease;
+}
+
+.topbar-pill-btn:hover {
+    border-color: #168AAD;
+    color: #0D5C75;
+}
+
+/* Tab Content Areas */
+.tab-content {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+#tab-counselor.tab-content.active {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Centered ChatGPT Conversation Workspace */
+.chatgpt-main-area {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.chatgpt-alerts-wrap {
+    width: 100%;
+    max-width: 820px;
+    margin: 0.5rem auto 0;
+    padding: 0 1rem;
+}
+
+.chat-feed {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    padding: 1.5rem 1rem 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.15rem !important;
+    width: 100%;
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+.chat-welcome {
+    margin: auto !important;
+    max-width: 620px;
+    text-align: center;
+    padding: 2rem 1rem !important;
+}
+
+.chat-welcome h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.55rem !important;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 0.5rem;
+}
+
+.chatgpt-composer-wrap {
+    width: 100%;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0.4rem 1rem 1.1rem;
+}
+
+.chatgpt-composer-box {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    background: #FFFFFF;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 24px;
+    padding: 0.5rem 0.6rem 0.5rem 0.75rem;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(13, 92, 117, 0.05);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chatgpt-composer-box:focus-within {
+    border-color: #168AAD;
+    box-shadow: 0 10px 32px rgba(22, 138, 173, 0.14), 0 0 0 3px rgba(22, 138, 173, 0.12);
+}
+
+.composer-attach-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #F1F5F9;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.16s ease;
+}
+
+.composer-attach-btn:hover {
+    background: #E0F4FA;
+    color: #0D5C75;
+    transform: scale(1.05);
+}
+
+.chatgpt-composer-box textarea {
+    flex: 1;
+    border: none !important;
+    outline: none !important;
+    resize: none;
+    background: transparent !important;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: #0F172A;
+    padding: 0.42rem 0.25rem;
+    max-height: 160px;
+    min-height: 24px;
+    box-shadow: none !important;
+}
+
+.chatgpt-composer-box .send-icon-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #168AAD 0%, #0D5C75 100%) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(13, 92, 117, 0.28);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.chatgpt-composer-box .send-icon-btn:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.04);
+}
+
+.chatgpt-composer-box .send-icon-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.composer-hint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.65rem 0;
+    font-size: 0.71rem;
+    color: #64748B;
+}
+
+/* Mobile & Tablet Responsive Drawer */
+@media (max-width: 960px) {
+    .thread-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        height: 100dvh !important;
+        width: 290px !important;
+        min-width: 290px !important;
+        transform: translateX(0);
+    }
+
+    .thread-sidebar.collapsed {
+        transform: translateX(-105%) !important;
+        width: 290px !important;
+        min-width: 290px !important;
+        padding: 0.75rem !important;
+    }
+
+    .sidebar-backdrop.active {
+        display: block !important;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(2px);
+        z-index: 50;
+    }
+
+    .tab-content {
+        padding: 1rem 0.85rem;
+    }
+
+    .hide-mobile {
+        display: none !important;
+    }
+}
     </style>
 </head>
 <body>
 
-    <!-- Top Navigation Bar -->
-    <header class="navbar">
-        <div class="nav-container">
-            <div class="brand">
-                <button class="thread-toggle-btn" onclick="toggleThreadSidebar()" title="Toggle Past Counseling Sessions">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-                    <span class="thread-toggle-label">History</span>
-                </button>
-                <span class="brand-icon" style="display:flex;align-items:center;color:var(--blue-400);"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>
-                <div class="brand-text">
-                    <span class="brand-title">UniFinder <span class="coral-text">AI</span></span>
-                    <span class="brand-sub">Global Admissions, Visas &amp; Career Assistant</span>
-                </div>
-            </div>
-
-            <div class="nav-actions">
-                <!-- LangSmith Monitoring Tag -->
-                <div class="langsmith-tag" id="langsmithTag" title="LangSmith Observability">
-                    <span class="ls-icon" style="display:flex;align-items:center;"><svg class="ui-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-                    <span id="langsmithLabel">LangSmith Tracing</span>
-                </div>
-
-                <button class="key-btn" onclick="openKeyModal()">
-                    <span class="key-icon" style="display:flex;align-items:center;"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
-                    <span id="navKeyLabel">API Settings</span>
-                </button>
-
-                <div class="status-badge" id="systemStatusBadge">
-                    <span class="pulse-dot"></span>
-                    <span id="statusText">SqliteSaver Ready</span>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Slide-out Drawer Backdrop -->
+    <!-- Mobile Drawer Backdrop -->
     <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleThreadSidebar()"></div>
 
-    <!-- App Layout: Main Content -->
+    <!-- App Layout: Unified ChatGPT-Style Sidebar + Full-Viewport Workspace -->
     <div class="layout-container">
 
-        <!-- Slide-out Thread History Drawer -->
-        <aside class="thread-sidebar collapsed" id="threadSidebar">
-            <div class="sidebar-top-bar">
-                <div class="sidebar-brand-badge">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    <span>Chat History</span>
+        <!-- Unified Left Sidebar -->
+        <aside class="thread-sidebar" id="threadSidebar">
+            <div class="sidebar-top-row">
+                <div class="sidebar-logo">
+                    <span class="sidebar-logo-badge">
+                        <svg class="ui-icon" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    </span>
+                    <span>UniFinder <span style="color:#48C0E0;">AI</span></span>
                 </div>
-                <button class="sidebar-close-btn" onclick="toggleThreadSidebar()" title="Close" style="display:flex;align-items:center;justify-content:center;"><svg class="ui-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                <button class="sidebar-icon-btn" onclick="toggleThreadSidebar()" title="Collapse Sidebar">
+                    <svg class="ui-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                </button>
             </div>
 
-            <div class="sidebar-header" style="display:flex; flex-direction:column; gap:0.55rem;">
-                <button class="new-chat-btn" onclick="createNewThread()">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> <span>New Chat</span>
+            <button class="new-chat-btn" onclick="createNewThread()">
+                <svg class="ui-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>New Chat</span>
+            </button>
+
+            <!-- Sidebar Navigation Views -->
+            <div class="thread-section-label">Workspace</div>
+            <nav class="sidebar-nav">
+                <button class="tab-btn active" onclick="switchTab('counselor')">
+                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
+                    <span>AI Counselor</span>
                 </button>
-                <button class="end-wipe-btn" onclick="endAndWipeSession()" title="Exit chat and remove all personal data, CVs & threads from the database" style="width:100%; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.45); color:#FCA5A5; padding:0.6rem 0.9rem; border-radius:10px; font-weight:600; font-size:0.8rem; cursor:pointer; transition:all 0.2s;">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> <span>End Chat &amp; Wipe Data</span>
+                <button class="tab-btn" onclick="switchTab('opportunities')">
+                    <svg class="ui-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                    <span>Scholarships</span>
                 </button>
-                <label style="display:flex; align-items:center; gap:0.45rem; font-size:0.74rem; color:var(--sand-300); cursor:pointer; padding:0.2rem 0.1rem;">
-                    <input type="checkbox" id="autoWipeOnExit" onchange="toggleAutoWipe(this.checked)">
-                    <span>Auto-wipe personal data on tab exit</span>
-                </label>
+                <button class="tab-btn" onclick="switchTab('matrix')">
+                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/></svg>
+                    <span>Universities</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('pr-visa')">
+                    <svg class="ui-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span>PR &amp; Visas</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('roi')">
+                    <svg class="ui-icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                    <span>Career ROI</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('sop')">
+                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>SOP Reviewer</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('shortlist')">
+                    <svg class="ui-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span>Wishlist (<span id="shortlistCount">0</span>)</span>
+                </button>
+            </nav>
+
+            <!-- Collapsible Student Profile & Filters -->
+            <details class="sidebar-accordion" id="profileFilterCard">
+                <summary>
+                    <span>Profile &amp; Study Filters</span>
+                    <span style="font-size:0.72rem; color:#48C0E0;">Edit ▾</span>
+                </summary>
+                <div class="sidebar-accordion-body">
+                    <div class="form-group" style="margin:0;">
+                        <label>Degree Level</label>
+                        <div class="segmented-control">
+                            <button type="button" class="segment-btn" onclick="selectDegree('BSc')">BSc</button>
+                            <button type="button" class="segment-btn active" onclick="selectDegree('MSc')">MSc</button>
+                            <button type="button" class="segment-btn" onclick="selectDegree('PhD')">PhD</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin:0;">
+                        <label for="subjectInput">Subject / Field</label>
+                        <input type="text" id="subjectInput" value="Computer Science" placeholder="e.g. Data Science, AI, Finance">
+                    </div>
+
+                    <div class="form-group" style="margin:0;">
+                        <label for="countryInput">Target Country</label>
+                        <select id="countryInput">
+                            <option value="">All Destinations (Global Top)</option>
+                            <option value="Germany">Germany (Low/Zero Tuition, PR)</option>
+                            <option value="United States">United States (STEM OPT)</option>
+                            <option value="Canada">Canada (PGWP &amp; PR)</option>
+                            <option value="United Kingdom">United Kingdom (Graduate Route)</option>
+                            <option value="Australia">Australia (485 Visa)</option>
+                            <option value="Netherlands">Netherlands (Zoekjaar)</option>
+                            <option value="Sweden">Sweden (Job Seeking)</option>
+                            <option value="Singapore">Singapore (Tech Hub)</option>
+                            <option value="France">France (Grande École)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row" style="gap:0.45rem; margin:0;">
+                        <div class="form-group half" style="margin:0;">
+                            <label for="gpaInput">GPA (4.0)</label>
+                            <input type="number" id="gpaInput" step="0.05" min="2.0" max="4.0" value="" placeholder="Optional">
+                        </div>
+                        <div class="form-group half" style="margin:0;">
+                            <label for="ieltsInput">IELTS</label>
+                            <input type="number" id="ieltsInput" step="0.5" min="5.0" max="9.0" value="" placeholder="Optional">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin:0;">
+                        <label for="budgetInput">Budget: <strong id="budgetValue" style="color:#E2E8F0;">Any</strong></label>
+                        <input type="number" id="budgetInput" min="0" step="1000" value="" placeholder="Max annual USD (optional)" oninput="updateBudgetDisplay(this.value)">
+                    </div>
+
+                    <div class="quick-chips" style="margin-top:0.2rem;">
+                        <button class="chip" onclick="setQuickScenario('MSc', 'Artificial Intelligence', 'Germany', 3.5, 7.0, 10000, 'I want tuition-free MSc AI programs in Germany with strong PR prospects.')">🇩🇪 Germany AI</button>
+                        <button class="chip" onclick="setQuickScenario('MSc', 'Data Science', 'Canada', 3.4, 7.0, 30000, 'Find MSc Data Science in Canada with 3-year PGWP and PR pathways.')">🇨🇦 Canada PR</button>
+                        <button class="chip" onclick="setQuickScenario('PhD', 'Computer Science', 'United States', 3.8, 7.5, 5000, 'I want fully-funded PhD Computer Science with RA/TA stipend in USA.')">🇺🇸 USA PhD</button>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Document Upload (C-RAG) -->
+            <div class="thread-section-label" style="display:flex; align-items:center; justify-content:space-between;">
+                <span>Documents (C-RAG)</span>
+                <button type="button" onclick="document.getElementById('docFileInput').click()" style="background:none; border:none; color:#48C0E0; font-size:0.72rem; font-weight:600; cursor:pointer; padding:0;">+ Upload</button>
+            </div>
+            <div class="docs-list" id="docsList">
+                <div class="doc-empty">No documents uploaded yet.</div>
             </div>
 
-            <div class="thread-section-label">Past Conversations</div>
+            <!-- Past Conversations -->
+            <div class="thread-section-label">Recent Chats</div>
             <div class="threads-list" id="threadsList">
                 <div class="thread-empty">Loading conversations...</div>
             </div>
 
-            <!-- Uploaded Documents in Current Session -->
-            <div class="thread-section-label" style="margin-top: 1.5rem;">Uploaded Documents (C-RAG)</div>
-            <div class="docs-list" id="docsList">
-                <div class="doc-empty">No documents uploaded yet.</div>
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="sidebar-footer-row">
+                    <button class="sidebar-icon-btn" onclick="openKeyModal()" style="width:auto; padding:0 0.65rem; gap:0.35rem; font-size:0.76rem; flex:1;" title="Configure API Keys">
+                        <svg class="ui-icon" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                        <span id="navKeyLabel">API Settings</span>
+                    </button>
+                    <button class="end-wipe-btn" onclick="endAndWipeSession()" title="End chat and wipe session data" style="background:rgba(239,68,68,0.16); border:1px solid rgba(239,68,68,0.38); color:#FCA5A5; padding:0.4rem 0.6rem; border-radius:8px; font-weight:600; font-size:0.74rem; cursor:pointer; display:flex; align-items:center; gap:0.3rem;">
+                        <svg class="ui-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        <span>Wipe</span>
+                    </button>
+                </div>
+                <div class="sidebar-footer-row" style="font-size:0.71rem; color:#94A3B8;">
+                    <div class="status-badge" id="systemStatusBadge" style="padding:0.2rem 0.5rem; font-size:0.7rem;">
+                        <span class="pulse-dot"></span>
+                        <span id="statusText">Connecting...</span>
+                    </div>
+                    <span class="langsmith-tag" id="langsmithTag" style="padding:0.2rem 0.45rem; font-size:0.68rem;">
+                        <span id="langsmithLabel">LangSmith</span>
+                    </span>
+                </div>
+                <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.7rem; color:#94A3B8; cursor:pointer;">
+                    <input type="checkbox" id="autoWipeOnExit" onchange="toggleAutoWipe(this.checked)">
+                    <span>Auto-wipe data on tab exit</span>
+                </label>
             </div>
         </aside>
 
-        <!-- Main Workspace -->
+        <!-- Main Full-Viewport Workspace -->
         <main class="app-wrapper">
 
-            <!-- Hero Banner -->
-            <section class="hero-banner">
-                <div class="hero-tag">
-                    <span class="hero-tag-icon">●</span> Live University, Scholarship &amp; Visa Search
+            <!-- Minimalist ChatGPT-Style Top Header -->
+            <header class="chat-shell-topbar">
+                <div class="topbar-left">
+                    <button class="topbar-menu-btn" onclick="toggleThreadSidebar()" title="Toggle Sidebar">
+                        <svg class="ui-icon" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                    </button>
+                    <div class="topbar-title-group">
+                        <span class="topbar-title-text" id="activeViewTitle">UniFinder Counselor</span>
+                        <span class="thread-tag hide-mobile" id="threadDisplay"></span>
+                        <span class="crag-pill hidden" id="cragBadge">CV Attached</span>
+                    </div>
                 </div>
-                <h1 class="hero-heading">
-                    Find Your Ideal University, <span class="coral-highlight">Scholarship</span> &amp; Career Path
-                </h1>
-                <p class="hero-desc">
-                    Upload your CV or enter your preferences below — our live agents check universities, tuition, student reviews, scholarships, and post-study visas.
-                </p>
-            </section>
-
-            <!-- Navigation Tabs -->
-            <nav class="dashboard-tabs">
-                <button class="tab-btn active" onclick="switchTab('counselor')">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg> AI Counselor
-                </button>
-                <button class="tab-btn" onclick="switchTab('opportunities')">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> Scholarships
-                </button>
-                <button class="tab-btn" onclick="switchTab('matrix')">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> Universities
-                </button>
-                <button class="tab-btn" onclick="switchTab('pr-visa')">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> PR &amp; Visas
-                </button>
-                <button class="tab-btn" onclick="switchTab('roi')">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Career ROI
-                </button>
-                <button class="tab-btn" onclick="switchTab('sop')">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> SOP Reviewer
-                </button>
-                <button class="tab-btn" onclick="switchTab('shortlist')">
-                    <svg class="ui-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Wishlist (<span id="shortlistCount">0</span>)
-                </button>
-            </nav>
+                <div class="topbar-right">
+                    <span class="live-hub-pill hide-mobile" id="liveHubClock">Global Mode</span>
+                    <button class="topbar-pill-btn" onclick="createNewThread()" title="Start a fresh chat">
+                        <svg class="ui-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span class="hide-mobile">New Chat</span>
+                    </button>
+                </div>
+            </header>
 
             <!-- ==============================================
-                 TAB 1: AI ADMISSIONS COUNSELOR (MAIN WORKFLOW)
+                 TAB 1: AI ADMISSIONS COUNSELOR (CHATGPT VIEW)
                  ============================================== -->
             <section id="tab-counselor" class="tab-content active">
-                <button type="button" class="mobile-profile-toggle" onclick="toggleMobileProfile()">
-                    <span>Your Profile, CV &amp; Filters</span>
-                    <span id="mobileProfileArrow">Show ▾</span>
-                </button>
-                <div class="counselor-grid">
-                    
-                    <!-- Left Control Panel: Profile & Parameters -->
-                    <div class="sidebar-card mobile-collapsed" id="profileFilterCard">
-                        <div class="card-header-bar">
-                            <h3>Your Profile</h3>
-                            <span class="coral-pill">Live Match</span>
-                        </div>
+                <div class="chatgpt-main-area">
 
-                        <!-- Document Upload (C-RAG) Dropzone -->
-                        <div class="upload-dropzone" id="uploadZone">
-                            <input type="file" id="docFileInput" accept=".pdf,.docx,.txt" onchange="handleFileUpload(this.files)" style="display:none;">
-                            <div class="dropzone-content" onclick="document.getElementById('docFileInput').click()">
-                                <span class="upload-icon" style="color:var(--blue-700);display:flex;align-items:center;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
-                                <div class="dropzone-text">
-                                    <strong>Upload CV or Transcript</strong>
-                                    <span>Auto-fills GPA, IELTS &amp; major (PDF, DOCX, TXT)</span>
-                                </div>
-                            </div>
-                            <div class="upload-feedback hidden" id="uploadFeedback"></div>
-                        </div>
-
-                        <div class="form-group" style="margin-top: 1rem;">
-                            <label>Degree Level</label>
-                            <div class="segmented-control">
-                                <button type="button" class="segment-btn" onclick="selectDegree('BSc')">BSc</button>
-                                <button type="button" class="segment-btn active" onclick="selectDegree('MSc')">MSc</button>
-                                <button type="button" class="segment-btn" onclick="selectDegree('PhD')">PhD</button>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="subjectInput">Subject / Field of Study</label>
-                            <input type="text" id="subjectInput" value="Computer Science" placeholder="e.g. Data Science, Robotics, Finance, Biotechnology">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="countryInput">Target Country (or leave blank for Global)</label>
-                            <select id="countryInput">
-                                <option value="">All Destinations (Global Top)</option>
-                                <option value="Germany">Germany (Low/Zero Tuition, Fast-track PR)</option>
-                                <option value="United States">United States (3-Yr STEM OPT, Highest Salaries)</option>
-                                <option value="Canada">Canada (3-Yr PGWP, Express Entry PR)</option>
-                                <option value="United Kingdom">United Kingdom (2-Yr Graduate Route)</option>
-                                <option value="Australia">Australia (Up to 4-Yr 485 Visa)</option>
-                                <option value="Netherlands">Netherlands (1-Yr Zoekjaar Search Year)</option>
-                                <option value="Sweden">Sweden (1-Yr Job Seeking)</option>
-                                <option value="Singapore">Singapore (Asian Tech Hub)</option>
-                                <option value="France">France (Grande École & Tech Hub)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group half">
-                                <label for="gpaInput">Your GPA (out of 4.0)</label>
-                                <input type="number" id="gpaInput" step="0.05" min="2.0" max="4.0" value="" placeholder="Optional (e.g. 3.4)">
-                            </div>
-                            <div class="form-group half">
-                                <label for="ieltsInput">IELTS / TOEFL</label>
-                                <input type="number" id="ieltsInput" step="0.5" min="5.0" max="9.0" value="" placeholder="Optional (e.g. 7.0)">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="budgetInput">Max Annual Tuition Budget: <strong id="budgetValue">Any</strong></label>
-                            <input type="number" id="budgetInput" min="0" step="1000" value="" placeholder="Optional (e.g. 25000)" oninput="updateBudgetDisplay(this.value)">
-                        </div>
-
-                        <!-- Quick Prompts Chips -->
-                        <div class="quick-chips">
-                            <span class="chips-label">Quick Scenarios:</span>
-                            <button class="chip" onclick="setQuickScenario('MSc', 'Artificial Intelligence', 'Germany', 3.5, 7.0, 10000, 'I want tuition-free MSc AI programs in Germany with strong PR prospects.')">
-                                🇩🇪 Germany Zero-Tuition AI
-                            </button>
-                            <button class="chip" onclick="setQuickScenario('MSc', 'Data Science', 'Canada', 3.4, 7.0, 30000, 'Find MSc Data Science in Canada with 3-year PGWP and PR pathways.')">
-                                🇨🇦 Canada PGWP & PR
-                            </button>
-                            <button class="chip" onclick="setQuickScenario('PhD', 'Computer Science', 'United States', 3.8, 7.5, 5000, 'I want fully-funded PhD Computer Science with RA/TA stipend in USA.')">
-                                🇺🇸 USA Fully-Funded PhD
-                            </button>
-                            <button class="chip" onclick="setQuickScenario('BSc', 'Software Engineering', 'Australia', 3.2, 6.5, 35000, 'Find BSc Software Engineering in Australia with regional PR points bonus.')">
-                                🇦🇺 Australia BSc Engineering
-                            </button>
-                        </div>
-                    </div>
-
-                                        <!-- Right Main Column: ChatGPT-Style Conversation Workspace -->
-                    <div class="main-column">
-                        
-                        <!-- Human-in-the-Loop (HITL) Alert Banner -->
+                    <!-- Alerts & Metrics (Centered) -->
+                    <div class="chatgpt-alerts-wrap">
                         <div class="hitl-banner hidden" id="hitlBanner">
                             <div class="hitl-header">
                                 <span class="hitl-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg></span>
@@ -2331,10 +2876,8 @@ html, body {
                             <div class="hitl-actions" id="hitlActionButtons"></div>
                         </div>
 
-                        <!-- Error Alert Box -->
                         <div class="alert-box error hidden" id="errorBox"></div>
 
-                        <!-- Quick Metrics Banner -->
                         <div class="metrics-banner hidden" id="metricsBanner">
                             <div class="metric-card">
                                 <div class="metric-num coral-text" id="metricUnisCount">0</div>
@@ -2353,53 +2896,49 @@ html, body {
                                 <div class="metric-label">Tuition Payback (ROI)</div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- ChatGPT-Style Conversation Container -->
-                        <div class="chat-workspace">
-                            <div class="chat-topbar">
-                                <div class="chat-topbar-title">
-                                    <svg class="ui-icon" viewBox="0 0 24 24"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
-                                    <span>UniFinder Counselor</span>
-                                    <span class="thread-tag" id="threadDisplay"></span>
-                                    <span class="crag-pill hidden" id="cragBadge">CV Attached</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:0.5rem;">
-                                    <span class="live-hub-pill" id="liveHubClock">Global Mode</span>
-                                    <button class="chat-mini-btn" onclick="createNewThread()" title="Start a fresh chat">
-                                    <svg class="ui-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New Chat
-                                </button>
-                                </div>
-                            </div>
-
-                            <div class="chat-feed" id="chatFeed">
-                                <div class="chat-welcome" id="chatWelcome">
-                                    <div class="chat-welcome-icon"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
-                                    <h3>Ask anything about your study abroad journey</h3>
-                                    <p>Upload your CV on the left or type a question below. You can ask follow-up questions anytime — your session memory is saved automatically.</p>
-                                    <div class="starter-chips-grid">
-                                        <button class="starter-chip" onclick="sendStarterPrompt('Find tuition-free MSc AI & Computer Science in Germany with PR outlook')">Tuition-free MSc in Germany</button>
-                                        <button class="starter-chip" onclick="sendStarterPrompt('Best MSc Data Science in Canada with 3-year PGWP and job market')">Data Science in Canada + PR</button>
-                                        <button class="starter-chip" onclick="sendStarterPrompt('Compare living costs, scholarships & sponsored visas in UK vs Netherlands')">UK vs Netherlands Comparison</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Subtle Mystery Thinking Indicator -->
-                            <div class="thinking-bubble hidden" id="thinkingBubble" style="margin: 0 1.25rem 0.75rem;">
-                                <span class="thinking-orb"></span>
-                                <span id="thinkingText">Analyzing your profile &amp; goals...</span>
-                            </div>
-
-                            <!-- Sticky Bottom Chat Composer -->
-                            <div class="chat-composer">
-                                <textarea id="userQuery" rows="1" placeholder="Ask about universities, scholarships, visas, or upload your CV..." onkeydown="handleChatKeydown(event)"></textarea>
-                                <button class="send-icon-btn" id="findBtn" onclick="runFinder()" title="Send message">
-                                    <svg class="ui-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                                </button>
+                    <!-- Scrollable Centered Chat Feed -->
+                    <div class="chat-feed" id="chatFeed">
+                        <div class="chat-welcome" id="chatWelcome">
+                            <div class="chat-welcome-icon"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+                            <h3>Where would you like to study?</h3>
+                            <p>Ask about universities, scholarships, visas, or attach your CV/transcript using the <strong>+</strong> button below.</p>
+                            <div class="starter-chips-grid">
+                                <button class="starter-chip" onclick="sendStarterPrompt('Find tuition-free MSc AI & Computer Science in Germany with PR outlook')">Tuition-free MSc in Germany</button>
+                                <button class="starter-chip" onclick="sendStarterPrompt('Best MSc Data Science in Canada with 3-year PGWP and job market')">Data Science in Canada + PR</button>
+                                <button class="starter-chip" onclick="sendStarterPrompt('Compare living costs, scholarships & sponsored visas in UK vs Netherlands')">UK vs Netherlands Comparison</button>
                             </div>
                         </div>
-
                     </div>
+
+                    <!-- Live Agent Status Bubble -->
+                    <div class="chatgpt-alerts-wrap" style="margin-top:0;">
+                        <div class="thinking-bubble hidden" id="thinkingBubble" style="margin-bottom:0.4rem;">
+                            <span class="thinking-orb"></span>
+                            <span id="thinkingText">Analyzing your profile &amp; goals...</span>
+                        </div>
+                    </div>
+
+                    <!-- Sticky Bottom ChatGPT Composer with Document Upload -->
+                    <div class="chatgpt-composer-wrap">
+                        <div class="upload-feedback hidden" id="uploadFeedback" style="margin-bottom:0.45rem;"></div>
+                        <input type="file" id="docFileInput" accept=".pdf,.docx,.txt" onchange="handleFileUpload(this.files)" style="display:none;">
+                        <div class="chatgpt-composer-box">
+                            <button type="button" class="composer-attach-btn" onclick="document.getElementById('docFileInput').click()" title="Upload CV, Transcript, or Brochure (PDF, DOCX, TXT)">
+                                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                            </button>
+                            <textarea id="userQuery" rows="1" placeholder="Message UniFinder AI or attach your CV/transcript..." onkeydown="handleChatKeydown(event)" oninput="autoResizeTextarea(this)"></textarea>
+                            <button class="send-icon-btn" id="findBtn" onclick="runFinder()" title="Send message">
+                                <svg class="ui-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            </button>
+                        </div>
+                        <div class="composer-hint-row">
+                            <span>Attach PDF/DOCX/TXT for C-RAG matching • Press Enter to send</span>
+                            <span class="hide-mobile">Multi-Agent Live Search</span>
+                        </div>
+                    </div>
+
                 </div>
             </section>
 

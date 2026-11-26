@@ -875,38 +875,35 @@ def get_checkpointer():
     """
     Dual-mode checkpointer:
     Uses PostgreSQL (PostgresSaver + ConnectionPool) in production (Render, Neon, Supabase)
-    or SQLite (SqliteSaver) when running locally.
+    or SQLite (SqliteSaver) only when DATABASE_URL is not configured.
     """
     database_url = os.getenv("DATABASE_URL")
     if database_url and database_url.startswith("postgres"):
-        try:
-            from langgraph.checkpoint.postgres import PostgresSaver
-            from psycopg_pool import ConnectionPool
-            from psycopg.rows import dict_row
+        from langgraph.checkpoint.postgres import PostgresSaver
+        from psycopg_pool import ConnectionPool
+        from psycopg.rows import dict_row
 
-            if "sslmode=" not in database_url:
-                separator = "&" if "?" in database_url else "?"
-                database_url = f"{database_url}{separator}sslmode=require"
+        if "sslmode=" not in database_url:
+            separator = "&" if "?" in database_url else "?"
+            database_url = f"{database_url}{separator}sslmode=require"
 
-            pool = ConnectionPool(
-                conninfo=database_url,
-                min_size=1,
-                max_size=10,
-                kwargs={
-                    "autocommit": True,
-                    "row_factory": dict_row,
-                    "prepare_threshold": 0,
-                    "keepalives": 1,
-                    "keepalives_idle": 30,
-                    "keepalives_interval": 10,
-                    "keepalives_count": 3,
-                },
-            )
-            saver = PostgresSaver(pool)
-            saver.setup()
-            return saver
-        except Exception:
-            pass
+        pool = ConnectionPool(
+            conninfo=database_url,
+            min_size=1,
+            max_size=10,
+            kwargs={
+                "autocommit": True,
+                "row_factory": dict_row,
+                "prepare_threshold": 0,
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 3,
+            },
+        )
+        saver = PostgresSaver(pool)
+        saver.setup()
+        return saver
 
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     saver = SqliteSaver(conn)
