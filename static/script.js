@@ -94,6 +94,17 @@ function toggleThreadSidebar() {
     }
 }
 
+function closeMobileSidebar() {
+    if (window.innerWidth <= 960) {
+        const sidebar = document.getElementById("threadSidebar");
+        const backdrop = document.getElementById("sidebarBackdrop");
+        if (sidebar && !sidebar.classList.contains("collapsed")) {
+            sidebar.classList.add("collapsed");
+        }
+        if (backdrop) backdrop.classList.remove("active");
+    }
+}
+
 function toggleMobileProfile() {
     const card = document.getElementById("profileFilterCard");
     const arrow = document.getElementById("mobileProfileArrow");
@@ -138,8 +149,8 @@ function renderWelcomeChat() {
             <div class="chat-welcome-icon">
                 <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
             </div>
-            <h3>Ask anything about your study abroad journey</h3>
-            <p>Upload your CV on the left or type a question below. You can ask follow-up questions anytime — your session memory is saved automatically.</p>
+            <h3>Where would you like to study?</h3>
+            <p>Ask about universities, scholarships, visas, or attach your CV/transcript using the <strong>paperclip</strong> button below.</p>
             <div class="starter-chips-grid">
                 <button class="starter-chip" onclick="sendStarterPrompt('Find tuition-free MSc AI & Computer Science in Germany with PR outlook')">Tuition-free MSc in Germany</button>
                 <button class="starter-chip" onclick="sendStarterPrompt('Best MSc Data Science in Canada with 3-year PGWP and job market')">Data Science in Canada + PR</button>
@@ -277,6 +288,7 @@ function createNewThread() {
 
     loadThreadsList();
     loadSessionDocs();
+    closeMobileSidebar();
     showToast("Started new chat session!");
 }
 
@@ -335,7 +347,7 @@ async function handleFileUpload(files) {
         const data = await res.json();
         if (data.success) {
             feedback.innerHTML = `✅ <strong>${data.filename}</strong> indexed (${data.total_chunks} chunks).`;
-            
+
             // Auto-populate hints
             if (data.profile_hints) {
                 if (data.profile_hints.detected_gpa) {
@@ -457,6 +469,7 @@ function setQuickScenario(deg, subj, country, gpa, ielts, budget, query) {
 
     document.getElementById("userQuery").scrollIntoView({ behavior: "smooth", block: "center" });
     document.getElementById("userQuery").focus();
+    closeMobileSidebar();
 }
 
 // ==========================================
@@ -643,7 +656,7 @@ function displayCompletedMetadata(data) {
     }
     if (data.career_roi_analysis) {
         const startSalary = data.career_roi_analysis.projected_starting_salary_avg_usd;
-        document.getElementById("metricStartingSalary").textContent = startSalary ? `$${(startSalary/1000).toFixed(0)}k/yr` : "$75k+";
+        document.getElementById("metricStartingSalary").textContent = startSalary ? `$${(startSalary / 1000).toFixed(0)}k/yr` : "$75k+";
         document.getElementById("metricPayback").textContent = `${data.career_roi_analysis.payback_period_years || 1.8} Yrs`;
     }
 
@@ -839,7 +852,7 @@ function filterMatrixTable() {
     const countryVal = document.getElementById("matrixCountryFilter").value;
 
     const filtered = cachedUniversities.filter(u => {
-        const matchSearch = !searchVal || 
+        const matchSearch = !searchVal ||
             u.name.toLowerCase().includes(searchVal) ||
             (u.subjects && u.subjects.some(s => s.toLowerCase().includes(searchVal)));
         const matchCountry = !countryVal || u.country.toLowerCase() === countryVal.toLowerCase();
