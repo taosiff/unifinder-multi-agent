@@ -100,6 +100,7 @@ def init_sqlite_db():
     CREATE TABLE IF NOT EXISTS chat_threads (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         thread_id TEXT UNIQUE NOT NULL,
+        client_id TEXT,
         title TEXT NOT NULL,
         degree_level TEXT,
         subject TEXT,
@@ -109,6 +110,11 @@ def init_sqlite_db():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
+
+    cursor.execute("PRAGMA table_info(chat_threads)")
+    cols = [r[1] for r in cursor.fetchall()]
+    if "client_id" not in cols:
+        cursor.execute("ALTER TABLE chat_threads ADD COLUMN client_id TEXT")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS session_documents (
@@ -189,6 +195,7 @@ def init_postgres_db():
     CREATE TABLE IF NOT EXISTS chat_threads (
         id SERIAL PRIMARY KEY,
         thread_id TEXT UNIQUE NOT NULL,
+        client_id TEXT,
         title TEXT NOT NULL,
         degree_level TEXT,
         subject TEXT,
@@ -198,6 +205,7 @@ def init_postgres_db():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """)
+    cursor.execute("ALTER TABLE chat_threads ADD COLUMN IF NOT EXISTS client_id TEXT;")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS session_documents (
@@ -546,7 +554,7 @@ def remove_from_shortlist(session_id: str, shortlist_id: int) -> bool:
     return affected > 0
 
 
-def get_or_create_thread(thread_id: str, title: str = "New Counseling Chat", degree: str = "MSc", subject: str = "Computer Science", country: str = "") -> Dict[str, Any]:
+def get_or_create_thread(thread_id: str, title: str = "New Counseling Chat", degree: str = "MSc", subject: str = "Computer Science", country: str = "", client_id: str = "") -> Dict[str, Any]:
     conn = get_db_connection()
     cursor = conn.cursor()
     ph = "%s" if is_postgres() else "?"
@@ -555,7 +563,10 @@ def get_or_create_thread(thread_id: str, title: str = "New Counseling Chat", deg
     row = cursor.fetchone()
 
     if row:
-        cursor.execute(f"UPDATE chat_threads SET message_count = message_count + 1, updated_at = CURRENT_TIMESTAMP WHERE thread_id = {ph}", (thread_id,))
+        if client_id and not dict(row).get("client_id"):
+            cursor.execute(f"UPDATE chat_threads SET client_id = {ph}, message_count = message_count + 1, updated_at = CURRENT_TIMESTAMP WHERE thread_id = {ph}", (client_id, thread_id))
+        else:
+            cursor.execute(f"UPDATE chat_threads SET message_count = message_count + 1, updated_at = CURRENT_TIMESTAMP WHERE thread_id = {ph}", (thread_id,))
         if not is_postgres():
             conn.commit()
         item = dict(row)
@@ -564,15 +575,15 @@ def get_or_create_thread(thread_id: str, title: str = "New Counseling Chat", deg
 
     if is_postgres():
         cursor.execute("""
-        INSERT INTO chat_threads (thread_id, title, degree_level, subject, country, message_count)
-        VALUES (%s, %s, %s, %s, %s, 1) RETURNING *
-        """, (thread_id, title, degree, subject, country))
+        INSERT INTO chat_threads (thread_id, client_id, title, degree_level, subject, country, message_count)
+        VALUES (%s, %s, %s, %s, %s, %s, 1) RETURNING *
+        """, (thread_id, client_id or None, title, degree, subject, country))
         new_row = dict(cursor.fetchone())
     else:
         cursor.execute("""
-        INSERT INTO chat_threads (thread_id, title, degree_level, subject, country, message_count)
-        VALUES (?, ?, ?, ?, ?, 1)
-        """, (thread_id, title, degree, subject, country))
+        INSERT INTO chat_threads (thread_id, client_id, title, degree_level, subject, country, message_count)
+        VALUES (?, ?, ?, ?, ?, ?, 1)
+        """, (thread_id, client_id or None, title, degree, subject, country))
         conn.commit()
         cursor.execute("SELECT * FROM chat_threads WHERE thread_id = ?", (thread_id,))
         new_row = dict(cursor.fetchone())
@@ -581,11 +592,16 @@ def get_or_create_thread(thread_id: str, title: str = "New Counseling Chat", deg
     return new_row
 
 
-def list_chat_threads(limit: int = 20) -> List[Dict[str, Any]]:
+def list_chat_threads(limit: int = 20, client_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    if not client_id:
+        return []
     conn = get_db_connection()
     cursor = conn.cursor()
     ph = "%s" if is_postgres() else "?"
-    cursor.execute(f"SELECT * FROM chat_threads ORDER BY updated_at DESC LIMIT {ph}", (limit,))
+    cursor.execute(
+        f"SELECT * FROM chat_threads WHERE client_id = {ph} ORDER BY updated_at DESC LIMIT {ph}",
+        (client_id, limit),
+    )
     rows = cursor.fetchall()
     results = [dict(r) for r in rows]
     conn.close()

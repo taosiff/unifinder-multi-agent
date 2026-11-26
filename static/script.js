@@ -3,7 +3,9 @@
  * Multi-Agent Subgraphs • C-RAG • Persistent SqliteSaver Memory • Live Streaming • HITL
  */
 
-// Global State (1-to-1 Chat Thread & Session ID)
+// Global State (1-to-1 Chat Thread, Session & Per-Browser Client ID)
+let currentClientId = localStorage.getItem("unifinder_client_id") || `client_${Math.random().toString(36).substring(2, 11)}`;
+localStorage.setItem("unifinder_client_id", currentClientId);
 let currentThreadId = localStorage.getItem("unifinder_thread_id") || `student_${Math.random().toString(36).substring(2, 9)}`;
 let currentSessionId = currentThreadId;
 let selectedDegree = "MSc";
@@ -116,7 +118,7 @@ function toggleMobileProfile() {
 
 async function loadThreadsList() {
     try {
-        const res = await fetch("/api/threads");
+        const res = await fetch(`/api/threads?client_id=${encodeURIComponent(currentClientId)}`);
         const data = await res.json();
         if (data.success) {
             renderThreadsList(data.threads);
@@ -507,6 +509,7 @@ async function runFinder() {
         message: query,
         thread_id: currentThreadId,
         session_id: currentSessionId,
+        client_id: currentClientId,
         degree_level: selectedDegree,
         subject: document.getElementById("subjectInput").value.trim() || "Computer Science",
         country: document.getElementById("countryInput").value,

@@ -63,6 +63,7 @@ class UniFinderRequest(BaseModel):
     message: str
     thread_id: Optional[str] = None
     session_id: Optional[str] = None
+    client_id: Optional[str] = None
     degree_level: Optional[str] = "MSc"
     subject: Optional[str] = "Computer Science"
     country: Optional[str] = ""
@@ -94,6 +95,7 @@ class KeyTestRequest(BaseModel):
 
 class ThreadCreateRequest(BaseModel):
     title: str
+    client_id: Optional[str] = None
     degree_level: Optional[str] = "MSc"
     subject: Optional[str] = "Computer Science"
     country: Optional[str] = ""
@@ -156,7 +158,8 @@ async def run_finder(req: UniFinderRequest):
             title=title_snippet,
             degree=req.degree_level or "MSc",
             subject=req.subject or "Computer Science",
-            country=req.country or ""
+            country=req.country or "",
+            client_id=req.client_id or ""
         )
 
         result = run_unifinder_agent(
@@ -216,7 +219,8 @@ async def chat_streaming(req: UniFinderRequest):
         title=title_snippet,
         degree=req.degree_level or "MSc",
         subject=req.subject or "Computer Science",
-        country=req.country or ""
+        country=req.country or "",
+        client_id=req.client_id or ""
     )
 
     generator = run_unifinder_agent_stream(
@@ -315,8 +319,8 @@ async def get_opportunities(
 
 
 @app.get("/api/threads")
-async def get_threads():
-    threads = list_chat_threads()
+async def get_threads(client_id: Optional[str] = None):
+    threads = list_chat_threads(client_id=client_id)
     return {"success": True, "threads": threads}
 
 
@@ -328,7 +332,8 @@ async def create_thread(req: ThreadCreateRequest):
         title=req.title,
         degree=req.degree_level or "MSc",
         subject=req.subject or "Computer Science",
-        country=req.country or ""
+        country=req.country or "",
+        client_id=req.client_id or ""
     )
     return {"success": True, "thread": item}
 
