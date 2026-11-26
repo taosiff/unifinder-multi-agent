@@ -731,9 +731,9 @@ CITY LIVING COSTS:
 {json.dumps(living, indent=2, default=str)}
 
 CAREER & ROI FORECAST:
-- Starting Salary: ${career.get('projected_starting_salary_avg_usd', 75000):,} USD/year
-- Payback Period: {career.get('payback_period_years', 2.0)} Years ({career.get('roi_rating')} ROI)
-- 3-Year Cumulative Net Profit: ${career.get('three_year_net_profit_usd', 25000):,} USD
+- Starting Salary: ${(career.get('projected_starting_salary_avg_usd') or 75000):,} USD/year
+- Payback Period: {career.get('payback_period_years') or 2.0} Years ({career.get('roi_rating', 'Strong')} ROI)
+- 3-Year Cumulative Net Profit: ${(career.get('three_year_net_profit_usd') or 25000):,} USD
 
 FORMAT THE RESPONSE BEAUTIFULLY WITH:
 # 🎓 Executive Admissions & Career Dossier
@@ -804,7 +804,7 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
 
     uni_rows = ""
     for u in unis:
-        uni_rows += f"- **{u['name']}** ({u['country']}, {u['city']}) | QS Rank: #{u.get('world_ranking', 'N/A')} | Annual Tuition: ${u.get('tuition_fee_annual_usd', 0):,} | Min GPA: {u.get('min_gpa', 3.0)} | [Official Website]({u.get('official_url', '#')})\n"
+        uni_rows += f"- **{u['name']}** ({u['country']}, {u['city']}) | QS Rank: #{u.get('world_ranking', 'N/A')} | Annual Tuition: ${(u.get('tuition_fee_annual_usd') or 0):,} | Min GPA: {u.get('min_gpa') or 'N/A'} | [Official Website]({u.get('official_url', '#')})\n"
 
     opp_rows = ""
     for o in opps[:3]:
@@ -814,14 +814,18 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
     if crag_grounding:
         crag_section = f"### 📄 Uploaded Document Insights (C-RAG):\n{crag_grounding}\n\n---\n"
 
+    gpa_display = f"{eligibility.get('user_gpa')}/4.0" if eligibility.get('user_gpa') is not None else "Not provided"
+    ielts_display = eligibility.get('user_ielts') if eligibility.get('user_ielts') is not None else "Not provided"
+    budget_display = f"${state.get('budget_usd'):,} USD" if state.get('budget_usd') is not None else "Flexible / Not specified"
+
     return f"""{api_notice}# 🎓 Executive Admissions & Career Dossier: {degree} in {subject}
 
 ## 1. Profile Assessment & Strategy Overview
 - **Degree Level**: {degree}
 - **Discipline**: {subject}
 - **Target Country**: {country}
-- **Academic Profile**: GPA {eligibility.get('user_gpa', 3.4)}/4.0 | IELTS {eligibility.get('user_ielts', 6.5)}
-- **Annual Investment Budget**: ${state.get('budget_usd', 25000):,} USD
+- **Academic Profile**: GPA {gpa_display} | IELTS {ielts_display}
+- **Annual Investment Budget**: {budget_display}
 
 {crag_section}### Eligibility Check & Critical Guardrails:
 {"".join([f"- ⚠️ {h}\n" for h in eligibility.get("hard_hurdles", [])]) or "- ✅ No hard disqualifying hurdles detected."}
@@ -852,10 +856,10 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
 
 ## 5. Job Market Outlook & Financial ROI
 - **Industry Demand**: **{career.get('industry_demand', 'High')}**
-- **Projected Starting Salary**: **${career.get('projected_starting_salary_avg_usd', 75000):,} USD / year**
-- **Net Program Investment**: ${career.get('net_total_investment_usd', 45000):,} USD
-- **Payback Period**: **{career.get('payback_period_years', 2.0)} Years** ({career.get('roi_rating')} ROI)
-- **3-Year Cumulative Net Profit**: **${career.get('three_year_net_profit_usd', 25000):,} USD**
+- **Projected Starting Salary**: **${(career.get('projected_starting_salary_avg_usd') or 75000):,} USD / year**
+- **Net Program Investment**: ${(career.get('net_total_investment_usd') or 45000):,} USD
+- **Payback Period**: **{career.get('payback_period_years') or 2.0} Years** ({career.get('roi_rating', 'Strong')} ROI)
+- **3-Year Cumulative Net Profit**: **${(career.get('three_year_net_profit_usd') or 25000):,} USD**
 
 ---
 
