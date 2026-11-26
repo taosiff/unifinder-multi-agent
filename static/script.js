@@ -501,6 +501,7 @@ async function executeStreamingSearch(payload) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
+        let receivedComplete = false;
 
         while (true) {
             const { done, value } = await reader.read();
@@ -528,7 +529,12 @@ async function executeStreamingSearch(payload) {
                             assistantBody.innerText = accumulatedMarkdown;
                         }
                         if (feed) feed.scrollTop = feed.scrollHeight;
+                    } else if (eventData.type === "error") {
+                        if (thinkingBubble) thinkingBubble.classList.add("hidden");
+                        showError("Agent error: " + (eventData.message || "Unexpected server error."));
+                        return;
                     } else if (eventData.type === "complete") {
+                        receivedComplete = true;
                         if (thinkingBubble) thinkingBubble.classList.add("hidden");
                         displayCompletedMetadata(eventData.data);
                         if (assistantBody && typeof marked !== "undefined") {
@@ -537,6 +543,11 @@ async function executeStreamingSearch(payload) {
                     }
                 }
             }
+        }
+
+        if (!receivedComplete && !accumulatedMarkdown) {
+            if (thinkingBubble) thinkingBubble.classList.add("hidden");
+            showError("Connection ended before results arrived. Please try again.");
         }
     } catch (e) {
         if (thinkingBubble) thinkingBubble.classList.add("hidden");

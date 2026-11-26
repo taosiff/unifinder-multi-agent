@@ -233,7 +233,15 @@ async def chat_streaming(req: UniFinderRequest):
         provider_override=req.llm_provider
     )
 
-    return StreamingResponse(generator, media_type="text/event-stream")
+    return StreamingResponse(
+        generator,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.post("/api/upload-doc")

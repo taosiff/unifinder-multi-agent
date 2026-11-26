@@ -72,17 +72,17 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "unifinder_me
 
 GROQ_FALLBACK_MODELS = [
     "qwen/qwen3.8-27b",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
     "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b"
 ]
 
 GEMINI_FALLBACK_MODELS = [
-    "gemini-3.8-flash",
-    "gemini-3.5-flash",
     "gemini-2.5-flash",
-    "gemini-1.5-flash"
+    "gemini-2.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.8-flash",
 ]
 
 
@@ -165,7 +165,13 @@ def invoke_llm_with_fallback(messages: List[AnyMessage]) -> Optional[str]:
     if groq_key:
         for model_name in GROQ_FALLBACK_MODELS:
             try:
-                llm = ChatGroq(model=model_name, api_key=groq_key, temperature=0.3)
+                llm = ChatGroq(
+                    model=model_name,
+                    api_key=groq_key,
+                    temperature=0.3,
+                    request_timeout=18,
+                    max_retries=0,
+                )
                 resp = llm.invoke(messages)
                 if resp and resp.content:
                     return resp.content
@@ -176,7 +182,13 @@ def invoke_llm_with_fallback(messages: List[AnyMessage]) -> Optional[str]:
     if google_key:
         for model_name in GEMINI_FALLBACK_MODELS:
             try:
-                llm = ChatGoogleGenerativeAI(model=model_name, google_api_key=google_key, temperature=0.3)
+                llm = ChatGoogleGenerativeAI(
+                    model=model_name,
+                    google_api_key=google_key,
+                    temperature=0.3,
+                    timeout=18,
+                    max_retries=0,
+                )
                 resp = llm.invoke(messages)
                 if resp and resp.content:
                     return resp.content
@@ -688,19 +700,19 @@ LIVE UNIVS.COM CATALOGUE MATCHES (22,900+ INSTITUTES):
 {json.dumps(univs_live[:5], indent=2, default=str)}
 
 OFFICIAL UNIVERSITY WEBSITE SCRAPED ADMISSIONS (TUITION, IELTS/TOEFL, GPA, DEADLINES, INTAKES & PROGRAMS):
-{json.dumps(official_scraped, indent=2, default=str)}
+{json.dumps(official_scraped[:2], indent=2, default=str)[:2500]}
 
 STUDENT & ALUMNI REVIEWS (REDDIT & FORUMS):
-{json.dumps(uni_reviews, indent=2, default=str)}
+{json.dumps(uni_reviews[:3], indent=2, default=str)[:1800]}
 
 COUNTRY ECONOMICS, STUDENT-FRIENDLINESS & PR OVERVIEW:
-{json.dumps(country_intel, indent=2, default=str)}
+{json.dumps(country_intel, indent=2, default=str)[:1200]}
 
 SUBJECT JOB CONDITIONS & AFTER-STUDY SPONSORED VISA REALITY:
-{json.dumps(job_market, indent=2, default=str)}
+{json.dumps(job_market, indent=2, default=str)[:1200]}
 
 LIVE WEB INTELLIGENCE (DUCKDUCKGO / GOOGLE PARALLEL SEARCH):
-{web_search[:1200] if web_search else "N/A"}
+{web_search[:800] if web_search else "N/A"}
 
 ADMISSION CHANCE TIERS:
 {json.dumps(eligibility.get('classified_universities', []), indent=2, default=str)}
@@ -737,12 +749,18 @@ FORMAT THE RESPONSE BEAUTIFULLY WITH:
         SystemMessage(content="You are an expert AI Education and Global Immigration Counselor. Use clean markdown formatting."),
         HumanMessage(content=prompt)
     ]
-    llm_output = invoke_llm_with_fallback(msgs)
+    llm_error = ""
+    llm_output = None
+    try:
+        llm_output = invoke_llm_with_fallback(msgs)
+    except Exception as exc:
+        llm_error = str(exc)[:180]
+
     if llm_output:
         dossier = llm_output
         calls = state.get("llm_calls", 0) + 1
     else:
-        dossier = generate_rule_based_dossier(state)
+        dossier = generate_rule_based_dossier(state, error_msg=llm_error)
         calls = state.get("llm_calls", 0)
 
     return {
@@ -856,28 +874,44 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
 def get_checkpointer():
     """
     Dual-mode checkpointer:
-    Uses PostgreSQL (PostgresSaver) in production (Render, Neon, Supabase)
+    Uses PostgreSQL (PostgresSaver + ConnectionPool) in production (Render, Neon, Supabase)
     or SQLite (SqliteSaver) when running locally.
     """
     database_url = os.getenv("DATABASE_URL")
     if database_url and database_url.startswith("postgres"):
-        from langgraph.checkpoint.postgres import PostgresSaver
-        import psycopg
-        from psycopg.rows import dict_row
+        try:
+            from langgraph.checkpoint.postgres import PostgresSaver
+            from psycopg_pool import ConnectionPool
+            from psycopg.rows import dict_row
 
-        if "sslmode=" not in database_url:
-            separator = "&" if "?" in database_url else "?"
-            database_url = f"{database_url}{separator}sslmode=require"
+            if "sslmode=" not in database_url:
+                separator = "&" if "?" in database_url else "?"
+                database_url = f"{database_url}{separator}sslmode=require"
 
-        conn = psycopg.connect(database_url, autocommit=True, row_factory=dict_row)
-        saver = PostgresSaver(conn)
-        saver.setup()
-        return saver
-    else:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        saver = SqliteSaver(conn)
-        saver.setup()
-        return saver
+            pool = ConnectionPool(
+                conninfo=database_url,
+                min_size=1,
+                max_size=10,
+                kwargs={
+                    "autocommit": True,
+                    "row_factory": dict_row,
+                    "prepare_threshold": 0,
+                    "keepalives": 1,
+                    "keepalives_idle": 30,
+                    "keepalives_interval": 10,
+                    "keepalives_count": 3,
+                },
+            )
+            saver = PostgresSaver(pool)
+            saver.setup()
+            return saver
+        except Exception:
+            pass
+
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    saver = SqliteSaver(conn)
+    saver.setup()
+    return saver
 
 
 def create_unifinder_graph():
@@ -1148,22 +1182,45 @@ async def run_unifinder_agent_stream(
 
     loop.run_in_executor(None, _run_sync_stream)
 
+    enrichment_nodes = {
+        "agent_official_admissions",
+        "agent_reddit_reviews",
+        "agent_scholarship_finder",
+        "agent_assessment_visa",
+        "agent_country_intel",
+        "agent_subject_job_market",
+    }
+    completed_enrichment = set()
+
     while True:
-        kind, payload = await queue.get()
+        try:
+            kind, payload = await asyncio.wait_for(queue.get(), timeout=4.0)
+        except asyncio.TimeoutError:
+            yield ": keepalive\n\n"
+            continue
+
         if kind == "done":
             break
         if kind == "error":
-            raise RuntimeError(payload)
+            yield f"data: {json.dumps({'type': 'error', 'message': payload})}\n\n"
+            return
         for node_name, node_out in payload.items():
             if isinstance(node_out, dict):
                 for k, v in node_out.items():
                     if k != "messages":
                         accumulated[k] = v
 
+                if node_name in enrichment_nodes:
+                    completed_enrichment.add(node_name)
+
                 phase_text = phase_map.get(node_name, "Researching...")
                 if phase_text != last_phase:
                     last_phase = phase_text
                     yield f"data: {json.dumps({'type': 'phase', 'text': phase_text})}\n\n"
+
+                if len(completed_enrichment) == len(enrichment_nodes) and last_phase != phase_map["answer_generator"]:
+                    last_phase = phase_map["answer_generator"]
+                    yield f"data: {json.dumps({'type': 'phase', 'text': last_phase})}\n\n"
 
     dossier = accumulated.get("dossier_markdown", "")
     if dossier:
