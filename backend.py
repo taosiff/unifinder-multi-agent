@@ -74,15 +74,11 @@ GROQ_FALLBACK_MODELS = [
     "qwen/qwen3.8-27b",
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
 ]
 
 GEMINI_FALLBACK_MODELS = [
-    "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
-    "gemini-3.5-flash",
-    "gemini-3.8-flash",
+    "gemini-2.5-flash",
 ]
 
 
@@ -169,7 +165,7 @@ def invoke_llm_with_fallback(messages: List[AnyMessage]) -> Optional[str]:
                     model=model_name,
                     api_key=groq_key,
                     temperature=0.3,
-                    request_timeout=18,
+                    request_timeout=10,
                     max_retries=0,
                 )
                 resp = llm.invoke(messages)
@@ -186,7 +182,7 @@ def invoke_llm_with_fallback(messages: List[AnyMessage]) -> Optional[str]:
                     model=model_name,
                     google_api_key=google_key,
                     temperature=0.3,
-                    timeout=18,
+                    timeout=10,
                     max_retries=0,
                 )
                 resp = llm.invoke(messages)
@@ -815,23 +811,40 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
     elif not os.getenv("GOOGLE_API_KEY") and not os.getenv("GROQ_API_KEY"):
         api_notice = "> 💡 **Tip**: Add your free Google Gemini or Groq API key in the API Settings modal or `.env` file to enable dynamic AI reasoning.\n\n"
 
-    uni_rows = ""
-    for u in unis:
-        uni_rows += f"- **{u['name']}** ({u['country']}, {u['city']}) | QS Rank: #{u.get('world_ranking', 'N/A')} | Annual Tuition: ${(u.get('tuition_fee_annual_usd') or 0):,} | Min GPA: {u.get('min_gpa') or 'N/A'} | [Official Website]({u.get('official_url', '#')})\n"
+    uni_table_rows = ""
+    if unis:
+        uni_table_rows = "| University | Location | QS Rank | Annual Tuition | Min GPA | Website |\n|---|---|---:|---:|---:|---|\n"
+        for u in unis:
+            uni_table_rows += (
+                f"| **{u['name']}** | {u['city']}, {u['country']} | #{u.get('world_ranking', 'N/A')} "
+                f"| ${(u.get('tuition_fee_annual_usd') or 0):,} | {u.get('min_gpa') or 'N/A'} "
+                f"| [Visit]({u.get('official_url', '#')}) |\n"
+            )
+
+    review_lines = ""
+    for r in (uni_reviews or [])[:3]:
+        u_name = r.get("university", "University")
+        summary = r.get("summary") or r.get("sentiment") or ""
+        if summary:
+            review_lines += f"- **{u_name}**: {str(summary)[:180]}\n"
+
+    top_employers = ", ".join(job_market.get("top_employers", [])[:5]) if isinstance(job_market, dict) else ""
 
     opp_rows = ""
     for o in opps[:3]:
-        opp_rows += f"- 🌟 **{o['title']}** ({o['destination']}) — **{o['funding_type']}** | Deadline: {o['deadline']} | [Learn More]({o['official_url']})\n"
+        opp_rows += f"- **{o['title']}** ({o['destination']}) — *{o['funding_type']}* | Deadline: {o['deadline']} | [Apply / Info]({o['official_url']})\n"
 
     crag_section = ""
     if crag_grounding:
-        crag_section = f"### 📄 Uploaded Document Insights (C-RAG):\n{crag_grounding}\n\n---\n"
+        crag_section = f"### 📄 Uploaded Document Insights (C-RAG)\n{crag_grounding}\n\n---\n"
 
     gpa_display = f"{eligibility.get('user_gpa')}/4.0" if eligibility.get('user_gpa') is not None else "Not provided"
     ielts_display = eligibility.get('user_ielts') if eligibility.get('user_ielts') is not None else "Not provided"
     budget_display = f"${state.get('budget_usd'):,} USD" if state.get('budget_usd') is not None else "Flexible / Not specified"
 
-    return f"""{api_notice}# 🎓 Executive Admissions & Career Dossier: {degree} in {subject}
+    return f"""{api_notice}# Executive Admissions & Career Dossier: {degree} in {subject}
+
+> **Quick Summary**: Tailored **{degree} in {subject}** roadmap for **{country}** — covering verified university matches, active scholarships, post-study work visa rules, and 3-year career ROI.
 
 ## 1. Profile Assessment & Strategy Overview
 - **Degree Level**: {degree}
@@ -840,15 +853,15 @@ def generate_rule_based_dossier(state: UniFinderState, error_msg: str = "") -> s
 - **Academic Profile**: GPA {gpa_display} | IELTS {ielts_display}
 - **Annual Investment Budget**: {budget_display}
 
-{crag_section}### Eligibility Check & Critical Guardrails:
+{crag_section}### Eligibility Check & Guardrails
 {"".join([f"- ⚠️ {h}\n" for h in eligibility.get("hard_hurdles", [])]) or "- ✅ No hard disqualifying hurdles detected."}
 {"".join([f"- ℹ️ {a}\n" for a in eligibility.get("advisory_notes", [])])}
 
 ---
 
 ## 2. Recommended Universities & Program Matches
-{uni_rows or "- Universities matching criteria are available in the University Matrix."}
-
+{uni_table_rows or "- Universities matching criteria are available in the Universities Explorer."}
+{f"\n### Student & Alumni Insights\n{review_lines}" if review_lines else ""}
 ---
 
 ## 3. Active Scholarship Opportunities & Funding

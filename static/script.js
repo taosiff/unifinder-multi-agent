@@ -149,14 +149,30 @@ function renderWelcomeChat() {
     feed.innerHTML = `
         <div class="chat-welcome" id="chatWelcome">
             <div class="chat-welcome-icon">
-                <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="2.6" fill="currentColor"/>
+                </svg>
             </div>
-            <h3>Where would you like to study?</h3>
-            <p>Ask about universities, scholarships, visas, or attach your CV/transcript using the <strong>paperclip</strong> button below.</p>
+            <h3>Chart your global academic path.</h3>
+            <p>Ask about universities, scholarships, visas, or attach your CV/transcript using the paperclip button below.</p>
             <div class="starter-chips-grid">
-                <button class="starter-chip" onclick="sendStarterPrompt('Find tuition-free MSc AI & Computer Science in Germany with PR outlook')">Tuition-free MSc in Germany</button>
-                <button class="starter-chip" onclick="sendStarterPrompt('Best MSc Data Science in Canada with 3-year PGWP and job market')">Data Science in Canada + PR</button>
-                <button class="starter-chip" onclick="sendStarterPrompt('Compare living costs, scholarships & sponsored visas in UK vs Netherlands')">UK vs Netherlands Comparison</button>
+                <button class="starter-chip" onclick="sendStarterPrompt('Find tuition-free MSc AI & Computer Science in Germany with PR outlook')">
+                    <span class="starter-chip-tag">Germany • Zero Tuition</span>
+                    <span class="starter-chip-title">Tuition-free MSc AI &amp; PR outlook</span>
+                </button>
+                <button class="starter-chip" onclick="sendStarterPrompt('Best MSc Data Science in Canada with 3-year PGWP and job market')">
+                    <span class="starter-chip-tag">Canada • PGWP &amp; PR</span>
+                    <span class="starter-chip-title">MSc Data Science + 3-yr work visa</span>
+                </button>
+                <button class="starter-chip" onclick="sendStarterPrompt('Compare living costs, scholarships & sponsored visas in UK vs Netherlands')">
+                    <span class="starter-chip-tag">Comparison • Europe</span>
+                    <span class="starter-chip-title">UK vs Netherlands cost &amp; visa ROI</span>
+                </button>
+                <button class="starter-chip" onclick="sendStarterPrompt('Fully-funded PhD Computer Science in USA with RA/TA stipend')">
+                    <span class="starter-chip-tag">USA • Funded PhD</span>
+                    <span class="starter-chip-title">Fully-funded CS PhD with stipend</span>
+                </button>
             </div>
         </div>
     `;

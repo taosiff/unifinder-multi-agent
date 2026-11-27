@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UniFinder AI — Higher-Ed, PR, Scholarships & C-RAG Matrix</title>
     
-    <!-- Google Fonts: Inter & Outfit -->
+    <!-- Google Fonts: Instrument Serif, Plus Jakarta Sans & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Marked.js for Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <!-- Custom Forest Green, Sand Beige & Electric Purple Stylesheet -->
-    <link rel="stylesheet" href="/static/style.css?v=3.5.0">
+    <link rel="stylesheet" href="/static/style.css?v=3.6.0">
     <!-- Embedded Master Stylesheet: Guarantees zero cache-lag & 100% render reliability -->
     <style>
 /* ==========================================================================
@@ -3055,6 +3055,184 @@ html, body {
     transform: translateY(-3px);
     box-shadow: 0 14px 30px rgba(13, 92, 117, 0.12);
 }
+/* ==========================================================================
+   Bespoke Editorial Design System (Warm Alabaster + Deep Obsidian + Emerald Teal)
+   ========================================================================== */
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    color: #111827 !important;
+    background: #F9F8F6 !important;
+}
+
+.thread-sidebar {
+    background: linear-gradient(180deg, #0B0F17 0%, #111827 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+    box-shadow: none !important;
+}
+
+.sidebar-logo {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.03em !important;
+}
+
+.sidebar-logo-badge {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 10px !important;
+    background: linear-gradient(135deg, #0F5257 0%, #0D9488 100%) !important;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+.new-chat-btn {
+    background: linear-gradient(135deg, #0F5257 0%, #0D9488 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25) !important;
+    font-weight: 600 !important;
+}
+
+.sidebar-nav .tab-btn.active {
+    background: rgba(13, 148, 136, 0.16) !important;
+    border-color: rgba(45, 212, 191, 0.28) !important;
+    color: #F0FDFA !important;
+}
+
+.app-wrapper {
+    background:
+        radial-gradient(ellipse 70% 50% at 50% -10%, rgba(13, 148, 136, 0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 90% 100%, rgba(217, 119, 6, 0.04) 0%, transparent 70%),
+        #F9F8F6 !important;
+}
+
+.chat-shell-topbar {
+    background: rgba(249, 248, 246, 0.82) !important;
+    backdrop-filter: blur(18px) !important;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.07) !important;
+}
+
+.topbar-title-text {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em;
+}
+
+/* Bespoke Editorial Welcome Screen */
+.chat-welcome {
+    max-width: 660px !important;
+    padding: 2.5rem 1rem 1.5rem !important;
+    animation: msgSlideIn3d 0.45s cubic-bezier(0.16, 1, 0.36, 1) both;
+}
+
+.chat-welcome-icon {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 16px !important;
+    background: linear-gradient(145deg, #0B0F17 0%, #0F5257 100%) !important;
+    box-shadow: 0 12px 28px rgba(15, 82, 87, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+}
+
+.chat-welcome h3 {
+    font-family: 'Instrument Serif', Georgia, serif !important;
+    font-size: 2.35rem !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.15 !important;
+    color: #0F172A !important;
+    margin-bottom: 0.55rem !important;
+}
+
+.chat-welcome p {
+    font-size: 0.94rem !important;
+    color: #4B5563 !important;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Bento 2x2 Starter Grid */
+.starter-chips-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
+    margin-top: 1.6rem !important;
+    text-align: left;
+}
+
+.starter-chip {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.25rem !important;
+    background: #FFFFFF !important;
+    border: 1px solid rgba(17, 24, 39, 0.09) !important;
+    border-radius: 14px !important;
+    padding: 0.85rem 1rem !important;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, 0.03), 0 6px 18px rgba(17, 24, 39, 0.04) !important;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease !important;
+}
+
+.starter-chip:hover {
+    transform: translateY(-2px) !important;
+    border-color: rgba(13, 148, 136, 0.45) !important;
+    box-shadow: 0 10px 24px rgba(15, 82, 87, 0.10) !important;
+}
+
+.starter-chip-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0F5257;
+    background: #F0FDFA;
+    padding: 0.14rem 0.45rem;
+    border-radius: 6px;
+}
+
+.starter-chip-title {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+    .chat-welcome h3 { font-size: 1.85rem !important; }
+    .starter-chips-grid { grid-template-columns: 1fr !important; }
+}
+
+.chatgpt-composer-box {
+    background: #FFFFFF !important;
+    border: 1px solid rgba(17, 24, 39, 0.12) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 2px 6px rgba(17, 24, 39, 0.03), 0 14px 34px rgba(17, 24, 39, 0.06) !important;
+}
+
+.chatgpt-composer-box:focus-within {
+    border-color: #0F5257 !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12), 0 14px 34px rgba(15, 82, 87, 0.09) !important;
+}
+
+.chatgpt-composer-box .send-icon-btn {
+    background: linear-gradient(135deg, #111827 0%, #0F5257 100%) !important;
+    box-shadow: 0 3px 10px rgba(15, 82, 87, 0.25) !important;
+}
+
+.chat-bubble-user {
+    background: linear-gradient(135deg, #111827 0%, #0F5257 100%) !important;
+    color: #FFFFFF !important;
+}
+
+.chat-bubble-assistant {
+    background: #FFFFFF !important;
+    border: 1px solid rgba(17, 24, 39, 0.08) !important;
+    box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03), 0 10px 26px rgba(17, 24, 39, 0.04) !important;
+}
+
+.pipeline-timer {
+    font-family: 'JetBrains Mono', monospace !important;
+}
     </style>
 </head>
 <body>
@@ -3070,9 +3248,12 @@ html, body {
             <div class="sidebar-top-row">
                 <div class="sidebar-logo">
                     <span class="sidebar-logo-badge">
-                        <svg class="ui-icon" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="2.5" fill="currentColor"/>
+                        </svg>
                     </span>
-                    <span>UniFinder <span style="color:#48C0E0;">AI</span></span>
+                    <span>UniFinder <span style="color:#2DD4BF; font-weight:600;">AI</span></span>
                 </div>
                 <button class="sidebar-icon-btn" onclick="toggleThreadSidebar()" title="Collapse Sidebar">
                     <svg class="ui-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
@@ -3303,13 +3484,31 @@ html, body {
                     <!-- Scrollable Centered Chat Feed -->
                     <div class="chat-feed" id="chatFeed">
                         <div class="chat-welcome" id="chatWelcome">
-                            <div class="chat-welcome-icon"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
-                            <h3>Where would you like to study?</h3>
-                            <p>Ask about universities, scholarships, visas, or attach your CV/transcript using the <strong>+</strong> button below.</p>
+                            <div class="chat-welcome-icon">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="2.6" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <h3>Chart your global academic path.</h3>
+                            <p>Ask about universities, scholarships, visas, or attach your CV/transcript using the paperclip button below.</p>
                             <div class="starter-chips-grid">
-                                <button class="starter-chip" onclick="sendStarterPrompt('Find tuition-free MSc AI & Computer Science in Germany with PR outlook')">Tuition-free MSc in Germany</button>
-                                <button class="starter-chip" onclick="sendStarterPrompt('Best MSc Data Science in Canada with 3-year PGWP and job market')">Data Science in Canada + PR</button>
-                                <button class="starter-chip" onclick="sendStarterPrompt('Compare living costs, scholarships & sponsored visas in UK vs Netherlands')">UK vs Netherlands Comparison</button>
+                                <button class="starter-chip" onclick="sendStarterPrompt('Find tuition-free MSc AI & Computer Science in Germany with PR outlook')">
+                                    <span class="starter-chip-tag">Germany • Zero Tuition</span>
+                                    <span class="starter-chip-title">Tuition-free MSc AI &amp; PR outlook</span>
+                                </button>
+                                <button class="starter-chip" onclick="sendStarterPrompt('Best MSc Data Science in Canada with 3-year PGWP and job market')">
+                                    <span class="starter-chip-tag">Canada • PGWP &amp; PR</span>
+                                    <span class="starter-chip-title">MSc Data Science + 3-yr work visa</span>
+                                </button>
+                                <button class="starter-chip" onclick="sendStarterPrompt('Compare living costs, scholarships & sponsored visas in UK vs Netherlands')">
+                                    <span class="starter-chip-tag">Comparison • Europe</span>
+                                    <span class="starter-chip-title">UK vs Netherlands cost &amp; visa ROI</span>
+                                </button>
+                                <button class="starter-chip" onclick="sendStarterPrompt('Fully-funded PhD Computer Science in USA with RA/TA stipend')">
+                                    <span class="starter-chip-tag">USA • Funded PhD</span>
+                                    <span class="starter-chip-title">Fully-funded CS PhD with stipend</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -3902,6 +4101,6 @@ html, body {
     </footer>
 
     <!-- App JavaScript -->
-    <script src="/static/script.js?v=3.5.0"></script>
+    <script src="/static/script.js?v=3.6.0"></script>
 </body>
 </html>
