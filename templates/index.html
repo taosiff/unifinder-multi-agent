@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <!-- Custom Forest Green, Sand Beige & Electric Purple Stylesheet -->
-    <link rel="stylesheet" href="/static/style.css?v=3.6.0">
+    <link rel="stylesheet" href="/static/style.css?v=3.7.0">
     <!-- Embedded Master Stylesheet: Guarantees zero cache-lag & 100% render reliability -->
     <style>
 /* ==========================================================================
@@ -3056,17 +3056,17 @@ html, body {
     box-shadow: 0 14px 30px rgba(13, 92, 117, 0.12);
 }
 /* ==========================================================================
-   Bespoke Editorial Design System (Warm Alabaster + Deep Obsidian + Emerald Teal)
+   Cohesive Dark Mode (ChatGPT / Linear Dark) & Mobile-First Fit
    ========================================================================== */
 body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
     -webkit-font-smoothing: antialiased;
-    color: #111827 !important;
-    background: #F9F8F6 !important;
+    color: #E2E8F0 !important;
+    background: #11151E !important;
 }
 
 .thread-sidebar {
-    background: linear-gradient(180deg, #0B0F17 0%, #111827 100%) !important;
+    background: linear-gradient(180deg, #090C12 0%, #0E131D 100%) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
     box-shadow: none !important;
 }
@@ -3093,69 +3093,104 @@ body {
 }
 
 .sidebar-nav .tab-btn.active {
-    background: rgba(13, 148, 136, 0.16) !important;
-    border-color: rgba(45, 212, 191, 0.28) !important;
+    background: rgba(20, 184, 166, 0.15) !important;
+    border-color: rgba(45, 212, 191, 0.30) !important;
     color: #F0FDFA !important;
 }
 
 .app-wrapper {
     background:
-        radial-gradient(ellipse 70% 50% at 50% -10%, rgba(13, 148, 136, 0.07) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 40% at 90% 100%, rgba(217, 119, 6, 0.04) 0%, transparent 70%),
-        #F9F8F6 !important;
+        radial-gradient(ellipse 75% 50% at 50% -10%, rgba(13, 148, 136, 0.13) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 90% 100%, rgba(56, 189, 248, 0.06) 0%, transparent 70%),
+        #11151E !important;
 }
 
 .chat-shell-topbar {
-    background: rgba(249, 248, 246, 0.82) !important;
+    background: rgba(17, 21, 30, 0.85) !important;
     backdrop-filter: blur(18px) !important;
-    border-bottom: 1px solid rgba(17, 24, 39, 0.07) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.topbar-menu-btn,
+.topbar-pill-btn {
+    background: #1A202C !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #E2E8F0 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+.topbar-menu-btn:hover,
+.topbar-pill-btn:hover {
+    background: #232B3B !important;
+    border-color: rgba(45, 212, 191, 0.4) !important;
+    color: #FFFFFF !important;
+}
+
+.topbar-profile-cta {
+    background: rgba(13, 148, 136, 0.18) !important;
+    border-color: rgba(45, 212, 191, 0.38) !important;
+    color: #5EEAD4 !important;
 }
 
 .topbar-title-text {
     font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-weight: 700 !important;
     letter-spacing: -0.02em;
+    color: #F8FAFC !important;
 }
 
-/* Bespoke Editorial Welcome Screen */
+.thread-tag {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #94A3B8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.live-hub-pill {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #CBD5E1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Bespoke Editorial Welcome Screen (Dark) */
 .chat-welcome {
     max-width: 660px !important;
-    padding: 2.5rem 1rem 1.5rem !important;
+    padding: 1.75rem 1rem 1rem !important;
     animation: msgSlideIn3d 0.45s cubic-bezier(0.16, 1, 0.36, 1) both;
 }
 
 .chat-welcome-icon {
-    width: 56px !important;
-    height: 56px !important;
-    border-radius: 16px !important;
-    background: linear-gradient(145deg, #0B0F17 0%, #0F5257 100%) !important;
-    box-shadow: 0 12px 28px rgba(15, 82, 87, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 15px !important;
+    background: linear-gradient(145deg, #161E2E 0%, #0F5257 100%) !important;
+    border: 1px solid rgba(45, 212, 191, 0.32);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
 }
 
 .chat-welcome h3 {
     font-family: 'Instrument Serif', Georgia, serif !important;
-    font-size: 2.35rem !important;
+    font-size: 2.3rem !important;
     font-weight: 400 !important;
     letter-spacing: -0.02em !important;
     line-height: 1.15 !important;
-    color: #0F172A !important;
-    margin-bottom: 0.55rem !important;
+    color: #F8FAFC !important;
+    margin-bottom: 0.5rem !important;
 }
 
 .chat-welcome p {
-    font-size: 0.94rem !important;
-    color: #4B5563 !important;
+    font-size: 0.92rem !important;
+    color: #94A3B8 !important;
     max-width: 480px;
     margin: 0 auto;
-    line-height: 1.6;
+    line-height: 1.55;
 }
 
-/* Bento 2x2 Starter Grid */
+/* Bento 2x2 Starter Grid (Dark) */
 .starter-chips-grid {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 0.65rem !important;
-    margin-top: 1.6rem !important;
+    gap: 0.6rem !important;
+    margin-top: 1.35rem !important;
     text-align: left;
 }
 
@@ -3164,74 +3199,206 @@ body {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 0.25rem !important;
-    background: #FFFFFF !important;
-    border: 1px solid rgba(17, 24, 39, 0.09) !important;
+    background: #181E2A !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
     border-radius: 14px !important;
-    padding: 0.85rem 1rem !important;
-    box-shadow: 0 1px 2px rgba(17, 24, 39, 0.03), 0 6px 18px rgba(17, 24, 39, 0.04) !important;
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease !important;
+    padding: 0.8rem 0.95rem !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22) !important;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease !important;
 }
 
 .starter-chip:hover {
     transform: translateY(-2px) !important;
-    border-color: rgba(13, 148, 136, 0.45) !important;
-    box-shadow: 0 10px 24px rgba(15, 82, 87, 0.10) !important;
+    background: #1E2636 !important;
+    border-color: rgba(45, 212, 191, 0.45) !important;
+    box-shadow: 0 10px 26px rgba(13, 148, 136, 0.18) !important;
 }
 
 .starter-chip-tag {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
+    font-size: 0.64rem;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #0F5257;
-    background: #F0FDFA;
+    color: #5EEAD4;
+    background: rgba(13, 148, 136, 0.16);
     padding: 0.14rem 0.45rem;
     border-radius: 6px;
 }
 
 .starter-chip-title {
-    font-size: 0.84rem;
+    font-size: 0.83rem;
     font-weight: 600;
-    color: #111827;
+    color: #F1F5F9;
     line-height: 1.35;
 }
 
 @media (max-width: 640px) {
-    .chat-welcome h3 { font-size: 1.85rem !important; }
-    .starter-chips-grid { grid-template-columns: 1fr !important; }
+    .chat-welcome { padding: 0.75rem 0.5rem 0.5rem !important; }
+    .chat-welcome-icon { width: 42px !important; height: 42px !important; margin-bottom: 0.65rem !important; }
+    .chat-welcome h3 { font-size: 1.65rem !important; }
+    .chat-welcome p { font-size: 0.82rem !important; }
+    .starter-chips-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.45rem !important; margin-top: 0.95rem !important; }
+    .starter-chip { padding: 0.6rem 0.65rem !important; border-radius: 12px !important; }
+    .starter-chip-tag { font-size: 0.56rem; padding: 0.1rem 0.35rem; }
+    .starter-chip-title { font-size: 0.74rem; }
 }
 
+/* Dark Composer */
 .chatgpt-composer-box {
-    background: #FFFFFF !important;
-    border: 1px solid rgba(17, 24, 39, 0.12) !important;
+    background: #181E2A !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 20px !important;
-    box-shadow: 0 2px 6px rgba(17, 24, 39, 0.03), 0 14px 34px rgba(17, 24, 39, 0.06) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.32) !important;
 }
 
 .chatgpt-composer-box:focus-within {
-    border-color: #0F5257 !important;
-    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12), 0 14px 34px rgba(15, 82, 87, 0.09) !important;
+    border-color: rgba(45, 212, 191, 0.55) !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.16), 0 10px 32px rgba(0, 0, 0, 0.36) !important;
+}
+
+.chatgpt-composer-box textarea {
+    color: #F8FAFC !important;
+}
+
+.chatgpt-composer-box textarea::placeholder {
+    color: #64748B !important;
+}
+
+.composer-attach-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #CBD5E1 !important;
+}
+
+.composer-attach-btn:hover {
+    background: rgba(45, 212, 191, 0.2) !important;
+    color: #5EEAD4 !important;
 }
 
 .chatgpt-composer-box .send-icon-btn {
-    background: linear-gradient(135deg, #111827 0%, #0F5257 100%) !important;
-    box-shadow: 0 3px 10px rgba(15, 82, 87, 0.25) !important;
+    background: linear-gradient(135deg, #0F5257 0%, #0D9488 100%) !important;
+    box-shadow: 0 3px 12px rgba(13, 148, 136, 0.35) !important;
 }
 
-.chat-bubble-user {
-    background: linear-gradient(135deg, #111827 0%, #0F5257 100%) !important;
-    color: #FFFFFF !important;
+.composer-hint-row {
+    color: #64748B !important;
 }
 
-.chat-bubble-assistant {
-    background: #FFFFFF !important;
-    border: 1px solid rgba(17, 24, 39, 0.08) !important;
-    box-shadow: 0 2px 8px rgba(17, 24, 39, 0.03), 0 10px 26px rgba(17, 24, 39, 0.04) !important;
+/* Dark Mode Status Pill & Chat Bubbles */
+.agent-pipeline-card {
+    background: rgba(24, 30, 42, 0.94) !important;
+    border: 1px solid rgba(45, 212, 191, 0.32) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32) !important;
+}
+
+.pipeline-step-badge {
+    background: rgba(13, 148, 136, 0.22) !important;
+    color: #5EEAD4 !important;
+}
+
+.pipeline-status-text {
+    color: #E2E8F0 !important;
 }
 
 .pipeline-timer {
     font-family: 'JetBrains Mono', monospace !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #94A3B8 !important;
+}
+
+.chat-bubble-user {
+    background: linear-gradient(135deg, #0F5257 0%, #0D9488 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.chat-bubble-assistant {
+    background: #181E2A !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.26) !important;
+}
+
+.chat-bubble-assistant .markdown-body {
+    color: #E2E8F0 !important;
+}
+
+.chat-bubble-assistant .markdown-body h1,
+.chat-bubble-assistant .markdown-body h2,
+.chat-bubble-assistant .markdown-body h3 {
+    color: #F8FAFC !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.chat-bubble-assistant .markdown-body a {
+    color: #5EEAD4 !important;
+}
+
+.chat-bubble-assistant .markdown-body table {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.chat-bubble-assistant .markdown-body td {
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+    color: #CBD5E1 !important;
+}
+
+.chat-bubble-assistant .markdown-body tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.chat-bubble-assistant .markdown-body blockquote {
+    background: rgba(13, 148, 136, 0.12) !important;
+    border-left-color: #2DD4BF !important;
+    color: #CCFBF1 !important;
+}
+
+.chat-bubble-actions {
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.chat-mini-btn {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #CBD5E1 !important;
+}
+
+.chat-mini-btn:hover {
+    background: rgba(45, 212, 191, 0.18) !important;
+    color: #5EEAD4 !important;
+}
+
+/* Dark Mode Secondary Tabs & Cards */
+.tab-intro h2 { color: #F8FAFC !important; }
+.tab-intro p { color: #94A3B8 !important; }
+
+.metric-card, .opp-card, .pr-card, .roi-card, .matrix-card, .sop-card, .shortlist-card, .news-card, .hitl-banner, .modal-card {
+    background: #181E2A !important;
+    border-color: rgba(255, 255, 255, 0.09) !important;
+    color: #E2E8F0 !important;
+}
+
+.metric-num, .opp-card h3, .pr-card h3, .roi-card h3, .modal-header h3 {
+    color: #F8FAFC !important;
+}
+
+.metric-label, .opp-card p, .pr-card p, .roi-card p {
+    color: #94A3B8 !important;
+}
+
+.tab-content select, .tab-content input, .tab-content textarea, .modal-card input, .modal-card select {
+    background: #11151E !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: #F8FAFC !important;
+}
+
+.matrix-table th {
+    background: #0F5257 !important;
+    color: #FFFFFF !important;
+}
+
+.matrix-table td {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #CBD5E1 !important;
 }
     </style>
 </head>
@@ -3411,6 +3578,7 @@ body {
                 </label>
             </div>
         </aside>
+        <script>if (window.innerWidth <= 960) document.getElementById('threadSidebar')?.classList.add('collapsed');</script>
 
         <!-- Main Full-Viewport Workspace -->
         <main class="app-wrapper">
@@ -4101,6 +4269,6 @@ body {
     </footer>
 
     <!-- App JavaScript -->
-    <script src="/static/script.js?v=3.6.0"></script>
+    <script src="/static/script.js?v=3.7.0"></script>
 </body>
 </html>
