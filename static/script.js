@@ -527,6 +527,22 @@ async function runFinder() {
     loadThreadsList();
 }
 
+function openProfileFilters() {
+    const sidebar = document.getElementById("threadSidebar");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    const card = document.getElementById("profileFilterCard");
+    if (sidebar && sidebar.classList.contains("collapsed")) {
+        sidebar.classList.remove("collapsed");
+        if (backdrop && window.innerWidth <= 960) {
+            backdrop.classList.add("active");
+        }
+    }
+    if (card) {
+        card.open = true;
+        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+}
+
 let pipelineTimerInterval = null;
 
 function startPipelineUI() {
@@ -534,7 +550,7 @@ function startPipelineUI() {
     const timerEl = document.getElementById("thinkingTimer");
     const textEl = document.getElementById("thinkingText");
     if (bubble) bubble.classList.remove("hidden");
-    if (textEl) textEl.textContent = "Analyzing your profile & goals...";
+    if (textEl) textEl.textContent = "Analyzing profile...";
     updatePipelineStage(0);
 
     const t0 = Date.now();
@@ -554,12 +570,8 @@ function stopPipelineUI() {
 }
 
 function updatePipelineStage(stageIdx) {
-    const stages = document.querySelectorAll("#pipelineStages .pipeline-stage");
-    stages.forEach((el, idx) => {
-        el.classList.remove("active", "done");
-        if (idx < stageIdx) el.classList.add("done");
-        else if (idx === stageIdx) el.classList.add("active");
-    });
+    const badge = document.getElementById("thinkingStepBadge");
+    if (badge) badge.textContent = `${stageIdx + 1}/5`;
 }
 
 function phaseToStageIndex(phaseText) {
