@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <!-- Custom Forest Green, Sand Beige & Electric Purple Stylesheet -->
-    <link rel="stylesheet" href="/static/style.css?v=3.9.0">
+    <link rel="stylesheet" href="/static/style.css?v=4.0.0">
     <!-- Embedded Master Stylesheet: Guarantees zero cache-lag & 100% render reliability -->
     <style>
 /* ==========================================================================
@@ -2758,10 +2758,10 @@ html, body {
         top: 0 !important;
         left: 0 !important;
         height: 100dvh !important;
-        width: min(72vw, 248px) !important;
-        min-width: min(72vw, 248px) !important;
-        padding: 0.6rem !important;
-        gap: 0.45rem !important;
+        width: min(64vw, 222px) !important;
+        min-width: min(64vw, 222px) !important;
+        padding: 0.5rem !important;
+        gap: 0.38rem !important;
         opacity: 1 !important;
         transform: translateX(0) !important;
         pointer-events: auto !important;
@@ -2769,21 +2769,43 @@ html, body {
 
     .thread-sidebar.collapsed {
         transform: translateX(-105%) !important;
-        width: min(72vw, 248px) !important;
-        min-width: min(72vw, 248px) !important;
-        padding: 0.6rem !important;
+        width: min(64vw, 222px) !important;
+        min-width: min(64vw, 222px) !important;
+        padding: 0.5rem !important;
         opacity: 1 !important;
         pointer-events: none !important;
     }
 
+    .sidebar-logo {
+        font-size: 0.92rem !important;
+    }
+
+    .sidebar-logo-badge {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
     .sidebar-nav .tab-btn {
-        padding: 0.42rem 0.6rem !important;
-        font-size: 0.8rem !important;
+        padding: 0.36rem 0.52rem !important;
+        font-size: 0.76rem !important;
+        gap: 0.45rem !important;
     }
 
     .new-chat-btn {
-        padding: 0.5rem 0.75rem !important;
-        font-size: 0.82rem !important;
+        padding: 0.42rem 0.65rem !important;
+        font-size: 0.78rem !important;
+    }
+
+    .sidebar-accordion {
+        padding: 0.4rem 0.5rem !important;
+    }
+
+    .sidebar-accordion summary {
+        font-size: 0.74rem !important;
+    }
+
+    .profile-summary-sub {
+        display: none !important;
     }
 
     .sidebar-backdrop.active {
@@ -2916,10 +2938,10 @@ html, body {
 
 .starter-chip:hover {
     transform: translateY(-2px) !important;
-    background: #FFFFFF !important;
-    border-color: #38BDF8 !important;
-    color: #0369A1 !important;
-    box-shadow: 0 8px 20px rgba(14, 165, 233, 0.12) !important;
+    background: linear-gradient(145deg, rgba(16, 36, 62, 0.96) 0%, rgba(10, 22, 40, 0.98) 100%) !important;
+    border-color: rgba(56, 189, 248, 0.65) !important;
+    color: #F0F9FF !important;
+    box-shadow: 0 10px 28px rgba(14, 165, 233, 0.24) !important;
 }
 
 /* Compact Live Status Pill (Single-Line, SaaS Polish) */
@@ -3263,8 +3285,14 @@ body {
 
 .starter-chip:hover {
     transform: translateY(-2px) !important;
-    border-color: rgba(56, 189, 248, 0.55) !important;
-    box-shadow: 0 10px 28px rgba(14, 165, 233, 0.22) !important;
+    background: linear-gradient(145deg, rgba(16, 36, 62, 0.96) 0%, rgba(10, 22, 40, 0.98) 100%) !important;
+    border-color: rgba(56, 189, 248, 0.65) !important;
+    color: #F0F9FF !important;
+    box-shadow: 0 10px 28px rgba(14, 165, 233, 0.24) !important;
+}
+
+.starter-chip:hover .starter-chip-title {
+    color: #FFFFFF !important;
 }
 
 .starter-chip-tag {
@@ -3521,6 +3549,37 @@ body {
     border-radius: 10px;
     padding: 0.45rem 0.75rem;
     font-size: 0.78rem;
+}
+
+/* Fix Dark-Mode Hover Contrast Across All Links, Tables & Chips */
+a:hover {
+    color: #7DD3FC !important;
+}
+
+.data-table tbody tr:hover,
+.matrix-table tbody tr:hover {
+    background-color: rgba(56, 189, 248, 0.10) !important;
+}
+
+.data-table tbody tr:hover td,
+.matrix-table tbody tr:hover td {
+    color: #F0F9FF !important;
+}
+
+.chip:hover {
+    background-color: rgba(56, 189, 248, 0.2) !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    color: #F0F9FF !important;
+}
+
+.upload-dropzone:hover {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.45) !important;
+}
+
+.opp-card:hover, .pr-card:hover, .roi-card:hover, .metric-card:hover {
+    background: linear-gradient(145deg, rgba(16, 34, 58, 0.96) 0%, rgba(10, 20, 36, 0.98) 100%) !important;
+    border-color: rgba(56, 189, 248, 0.48) !important;
 }
 
 .alert-box.error {
@@ -3823,11 +3882,11 @@ body {
                     <div class="chatgpt-composer-wrap">
                         <div class="upload-feedback hidden" id="uploadFeedback" style="margin-bottom:0.45rem;"></div>
                         <input type="file" id="docFileInput" accept=".pdf,.docx,.txt" onchange="handleFileUpload(this.files)" style="display:none;">
-                        <div class="chatgpt-composer-box">
+                        <div class="chatgpt-composer-box" onclick="closeMobileSidebar()">
                             <button type="button" class="composer-attach-btn" onclick="document.getElementById('docFileInput').click()" title="Upload CV, Transcript, or Brochure (PDF, DOCX, TXT)">
                                 <svg class="ui-icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                             </button>
-                            <textarea id="userQuery" rows="1" placeholder="Message UniFinder AI or attach your CV/transcript..." onkeydown="handleChatKeydown(event)" oninput="autoResizeTextarea(this)"></textarea>
+                            <textarea id="userQuery" rows="1" placeholder="Message UniFinder AI or attach your CV/transcript..." onfocus="closeMobileSidebar()" onkeydown="handleChatKeydown(event)" oninput="closeMobileSidebar(); autoResizeTextarea(this)"></textarea>
                             <button class="send-icon-btn" id="findBtn" onclick="runFinder()" title="Send message">
                                 <svg class="ui-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                             </button>
@@ -4397,6 +4456,6 @@ body {
     </footer>
 
     <!-- App JavaScript -->
-    <script src="/static/script.js?v=3.9.0"></script>
+    <script src="/static/script.js?v=4.0.0"></script>
 </body>
 </html>
