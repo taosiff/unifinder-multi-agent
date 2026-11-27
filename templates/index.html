@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <!-- Custom Forest Green, Sand Beige & Electric Purple Stylesheet -->
-    <link rel="stylesheet" href="/static/style.css?v=3.7.0">
+    <link rel="stylesheet" href="/static/style.css?v=3.8.0">
     <!-- Embedded Master Stylesheet: Guarantees zero cache-lag & 100% render reliability -->
     <style>
 /* ==========================================================================
@@ -2631,6 +2631,7 @@ html, body {
     flex: 1 !important;
     min-height: 0 !important;
     overflow-y: auto !important;
+    background: transparent !important;
     padding: 1.5rem 1rem 1rem !important;
     display: flex !important;
     flex-direction: column !important;
@@ -2757,8 +2758,10 @@ html, body {
         top: 0 !important;
         left: 0 !important;
         height: 100dvh !important;
-        width: min(84vw, 300px) !important;
-        min-width: min(84vw, 300px) !important;
+        width: min(72vw, 248px) !important;
+        min-width: min(72vw, 248px) !important;
+        padding: 0.6rem !important;
+        gap: 0.45rem !important;
         opacity: 1 !important;
         transform: translateX(0) !important;
         pointer-events: auto !important;
@@ -2766,26 +2769,36 @@ html, body {
 
     .thread-sidebar.collapsed {
         transform: translateX(-105%) !important;
-        width: min(84vw, 300px) !important;
-        min-width: min(84vw, 300px) !important;
-        padding: 0.75rem !important;
+        width: min(72vw, 248px) !important;
+        min-width: min(72vw, 248px) !important;
+        padding: 0.6rem !important;
         opacity: 1 !important;
         pointer-events: none !important;
+    }
+
+    .sidebar-nav .tab-btn {
+        padding: 0.42rem 0.6rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .new-chat-btn {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.82rem !important;
     }
 
     .sidebar-backdrop.active {
         display: block !important;
         position: fixed !important;
         inset: 0 !important;
-        background: rgba(15, 23, 42, 0.45) !important;
-        backdrop-filter: blur(2px) !important;
+        background: rgba(5, 8, 15, 0.62) !important;
+        backdrop-filter: blur(3px) !important;
         z-index: 50 !important;
         opacity: 1 !important;
         visibility: visible !important;
     }
 
     .tab-content {
-        padding: 1rem 0.85rem;
+        padding: 0.9rem 0.75rem;
     }
 
     .hide-mobile {
@@ -2794,21 +2807,54 @@ html, body {
 }
 
 @media (max-width: 640px) {
+    .chat-shell-topbar {
+        height: 46px !important;
+        min-height: 46px !important;
+        padding: 0 0.65rem !important;
+    }
+
+    .topbar-menu-btn {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .topbar-title-text {
+        font-size: 0.9rem !important;
+    }
+
+    .topbar-pill-btn {
+        padding: 0.28rem 0.55rem !important;
+        font-size: 0.74rem !important;
+    }
+
     .chat-feed {
-        padding: 0.85rem 0.65rem 0.65rem !important;
+        padding: 0.75rem 0.6rem 0.5rem !important;
     }
 
     .chatgpt-composer-wrap {
-        padding: 0.35rem 0.65rem max(0.75rem, env(safe-area-inset-bottom)) !important;
+        padding: 0.25rem 0.6rem max(0.6rem, env(safe-area-inset-bottom)) !important;
+    }
+
+    .chatgpt-composer-box {
+        padding: 0.34rem 0.42rem 0.34rem 0.52rem !important;
+        border-radius: 18px !important;
+        gap: 0.35rem !important;
+    }
+
+    .composer-attach-btn,
+    .chatgpt-composer-box .send-icon-btn {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
     }
 
     .composer-hint-row {
-        font-size: 0.66rem !important;
-        padding: 0.28rem 0.45rem 0 !important;
+        display: none !important;
     }
 
     .chatgpt-composer-box textarea {
         font-size: 16px !important;
+        padding: 0.32rem 0.2rem !important;
     }
 
     .chat-welcome h3 {
@@ -3399,6 +3445,25 @@ body {
 .matrix-table td {
     border-color: rgba(255, 255, 255, 0.08) !important;
     color: #CBD5E1 !important;
+}
+
+.tab-content label, .modal-card label, .modal-desc {
+    color: #CBD5E1 !important;
+}
+
+.upload-feedback {
+    background: rgba(13, 148, 136, 0.16) !important;
+    border: 1px solid rgba(45, 212, 191, 0.35) !important;
+    color: #CCFBF1 !important;
+    border-radius: 10px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.78rem;
+}
+
+.alert-box.error {
+    background: rgba(239, 68, 68, 0.14) !important;
+    border: 1px solid rgba(248, 113, 113, 0.35) !important;
+    color: #FCA5A5 !important;
 }
     </style>
 </head>
@@ -4269,6 +4334,6 @@ body {
     </footer>
 
     <!-- App JavaScript -->
-    <script src="/static/script.js?v=3.7.0"></script>
+    <script src="/static/script.js?v=3.8.0"></script>
 </body>
 </html>
