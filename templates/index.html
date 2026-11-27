@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <!-- Custom Forest Green, Sand Beige & Electric Purple Stylesheet -->
-    <link rel="stylesheet" href="/static/style.css?v=3.2.0">
+    <link rel="stylesheet" href="/static/style.css?v=3.3.0">
     <!-- Embedded Master Stylesheet: Guarantees zero cache-lag & 100% render reliability -->
     <style>
 /* ==========================================================================
@@ -2759,6 +2759,223 @@ html, body {
         max-width: 90% !important;
     }
 }
+
+/* ==========================================================================
+   3D Tactile Animations, Live Agent Pipeline & Clean ChatGPT Markdown
+   ========================================================================== */
+@keyframes msgSlideIn3d {
+    0% { opacity: 0; transform: translateY(12px) scale(0.985); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes float3d {
+    0%, 100% { transform: translateY(0px) rotateX(0deg); }
+    50% { transform: translateY(-5px) rotateX(6deg); }
+}
+
+@keyframes stagePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(22, 138, 173, 0.35); }
+    50% { box-shadow: 0 0 0 6px rgba(22, 138, 173, 0); }
+}
+
+.chat-msg-row {
+    animation: msgSlideIn3d 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.chat-welcome-icon {
+    width: 60px !important;
+    height: 60px !important;
+    margin: 0 auto 1rem !important;
+    border-radius: 18px !important;
+    background: linear-gradient(145deg, #168AAD 0%, #073B4C 100%) !important;
+    color: #FFFFFF !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 14px 28px rgba(13, 92, 117, 0.26), inset 0 1px 1px rgba(255, 255, 255, 0.35) !important;
+    animation: float3d 4s ease-in-out infinite;
+}
+
+.starter-chip {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+    border: 1px solid #CBD5E1 !important;
+    border-bottom: 3px solid #94A3B8 !important;
+    border-radius: 14px !important;
+    padding: 0.65rem 1rem !important;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06) !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
+}
+
+.starter-chip:hover {
+    transform: translateY(-3px) !important;
+    border-color: #168AAD !important;
+    border-bottom-color: #0D5C75 !important;
+    box-shadow: 0 12px 24px rgba(22, 138, 173, 0.16) !important;
+}
+
+/* 3D Live Multi-Agent Pipeline Card */
+.agent-pipeline-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(240, 250, 253, 0.94) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid #BAE6FD;
+    border-bottom: 3px solid #7DD3FC;
+    border-radius: 16px;
+    padding: 0.75rem 0.95rem;
+    margin-bottom: 0.55rem;
+    box-shadow: 0 10px 26px rgba(13, 92, 117, 0.10);
+    animation: msgSlideIn3d 0.25s ease both;
+}
+
+.agent-pipeline-card.hidden {
+    display: none !important;
+}
+
+.pipeline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.55rem;
+}
+
+.pipeline-status-left {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #073B4C;
+}
+
+.pipeline-timer {
+    font-family: 'Outfit', monospace;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #0D5C75;
+    background: #E0F4FA;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+}
+
+.pipeline-stages {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.35rem;
+}
+
+.pipeline-stage {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.34rem 0.42rem;
+    border-radius: 9px;
+    background: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.22s ease;
+}
+
+.pipeline-stage.active {
+    background: linear-gradient(135deg, #168AAD 0%, #0D5C75 100%);
+    color: #FFFFFF;
+    border-color: #22A3C7;
+    animation: stagePulse 1.6s infinite;
+    transform: translateY(-1px);
+}
+
+.pipeline-stage.done {
+    background: #ECFDF5;
+    color: #047857;
+    border-color: #A7F3D0;
+}
+
+@media (max-width: 640px) {
+    .pipeline-stages {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Clean Organized ChatGPT Markdown Output */
+.chat-bubble-assistant {
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+.chat-bubble-assistant .markdown-body {
+    font-size: 0.94rem !important;
+    line-height: 1.72 !important;
+    color: #1E293B !important;
+}
+
+.chat-bubble-assistant .markdown-body h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.32rem;
+    color: #073B4C;
+    border-bottom: 2px solid #E0F4FA;
+    padding-bottom: 0.4rem;
+    margin: 0.25rem 0 0.85rem;
+}
+
+.chat-bubble-assistant .markdown-body h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.08rem;
+    color: #0D5C75;
+    margin: 1.15rem 0 0.5rem;
+}
+
+.chat-bubble-assistant .markdown-body h3 {
+    font-size: 0.96rem;
+    color: #0F172A;
+    margin: 0.85rem 0 0.35rem;
+}
+
+.chat-bubble-assistant .markdown-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.85rem 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #E2E8F0;
+    font-size: 0.83rem;
+}
+
+.chat-bubble-assistant .markdown-body th {
+    background: linear-gradient(135deg, #0D5C75 0%, #073B4C 100%);
+    color: #FFFFFF;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.55rem 0.75rem;
+}
+
+.chat-bubble-assistant .markdown-body td {
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid #E2E8F0;
+}
+
+.chat-bubble-assistant .markdown-body tr:nth-child(even) td {
+    background: #F8FAFC;
+}
+
+.chat-bubble-assistant .markdown-body blockquote {
+    border-left: 3px solid #168AAD;
+    background: #F0FAFD;
+    padding: 0.55rem 0.85rem;
+    border-radius: 0 10px 10px 0;
+    margin: 0.7rem 0;
+    color: #073B4C;
+}
+
+.metric-card, .opp-card, .pr-card, .roi-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover, .opp-card:hover, .pr-card:hover, .roi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(13, 92, 117, 0.12);
+}
     </style>
 </head>
 <body>
@@ -3006,11 +3223,23 @@ html, body {
                         </div>
                     </div>
 
-                    <!-- Live Agent Status Bubble -->
+                    <!-- Live 3D Multi-Agent Pipeline Indicator -->
                     <div class="chatgpt-alerts-wrap" style="margin-top:0;">
-                        <div class="thinking-bubble hidden" id="thinkingBubble" style="margin-bottom:0.4rem;">
-                            <span class="thinking-orb"></span>
-                            <span id="thinkingText">Analyzing your profile &amp; goals...</span>
+                        <div class="agent-pipeline-card hidden" id="thinkingBubble">
+                            <div class="pipeline-header">
+                                <div class="pipeline-status-left">
+                                    <span class="thinking-orb"></span>
+                                    <span id="thinkingText">Analyzing your profile &amp; goals...</span>
+                                </div>
+                                <span class="pipeline-timer" id="thinkingTimer">0.0s</span>
+                            </div>
+                            <div class="pipeline-stages" id="pipelineStages">
+                                <div class="pipeline-stage active" data-stage="0">1. Profile &amp; CV</div>
+                                <div class="pipeline-stage" data-stage="1">2. Discovery</div>
+                                <div class="pipeline-stage" data-stage="2">3. Admissions</div>
+                                <div class="pipeline-stage" data-stage="3">4. Visa &amp; ROI</div>
+                                <div class="pipeline-stage" data-stage="4">5. Synthesis</div>
+                            </div>
                         </div>
                     </div>
 
@@ -3592,6 +3821,6 @@ html, body {
     </footer>
 
     <!-- App JavaScript -->
-    <script src="/static/script.js?v=3.2.0"></script>
+    <script src="/static/script.js?v=3.3.0"></script>
 </body>
 </html>

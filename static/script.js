@@ -527,13 +527,57 @@ async function runFinder() {
     loadThreadsList();
 }
 
+let pipelineTimerInterval = null;
+
+function startPipelineUI() {
+    const bubble = document.getElementById("thinkingBubble");
+    const timerEl = document.getElementById("thinkingTimer");
+    const textEl = document.getElementById("thinkingText");
+    if (bubble) bubble.classList.remove("hidden");
+    if (textEl) textEl.textContent = "Analyzing your profile & goals...";
+    updatePipelineStage(0);
+
+    const t0 = Date.now();
+    if (pipelineTimerInterval) clearInterval(pipelineTimerInterval);
+    if (timerEl) timerEl.textContent = "0.0s";
+    pipelineTimerInterval = setInterval(() => {
+        if (timerEl) timerEl.textContent = ((Date.now() - t0) / 1000).toFixed(1) + "s";
+    }, 100);
+}
+
+function stopPipelineUI() {
+    if (pipelineTimerInterval) {
+        clearInterval(pipelineTimerInterval);
+        pipelineTimerInterval = null;
+    }
+    document.getElementById("thinkingBubble")?.classList.add("hidden");
+}
+
+function updatePipelineStage(stageIdx) {
+    const stages = document.querySelectorAll("#pipelineStages .pipeline-stage");
+    stages.forEach((el, idx) => {
+        el.classList.remove("active", "done");
+        if (idx < stageIdx) el.classList.add("done");
+        else if (idx === stageIdx) el.classList.add("active");
+    });
+}
+
+function phaseToStageIndex(phaseText) {
+    const t = (phaseText || "").toLowerCase();
+    if (t.includes("writing") || t.includes("synthes")) return 4;
+    if (t.includes("visa") || t.includes("pr") || t.includes("roi") || t.includes("job") || t.includes("scholar")) return 3;
+    if (t.includes("admission") || t.includes("review")) return 2;
+    if (t.includes("exploring") || t.includes("shortlist")) return 1;
+    return 0;
+}
+
 async function executeStreamingSearch(payload) {
     const threadDisplay = document.getElementById("threadDisplay");
-    const thinkingBubble = document.getElementById("thinkingBubble");
     const thinkingText = document.getElementById("thinkingText");
     const feed = document.getElementById("chatFeed");
 
     if (threadDisplay) threadDisplay.textContent = payload.thread_id;
+    startPipelineUI();
 
     let assistantBody = null;
     let accumulatedMarkdown = "";
@@ -566,8 +610,9 @@ async function executeStreamingSearch(payload) {
 
                     if (eventData.type === "phase") {
                         if (thinkingText) thinkingText.textContent = eventData.text;
+                        updatePipelineStage(phaseToStageIndex(eventData.text));
                     } else if (eventData.type === "token") {
-                        if (thinkingBubble) thinkingBubble.classList.add("hidden");
+                        stopPipelineUI();
                         if (!assistantBody) {
                             assistantBody = appendChatMessage("assistant", "");
                         }
@@ -579,12 +624,12 @@ async function executeStreamingSearch(payload) {
                         }
                         if (feed) feed.scrollTop = feed.scrollHeight;
                     } else if (eventData.type === "error") {
-                        if (thinkingBubble) thinkingBubble.classList.add("hidden");
+                        stopPipelineUI();
                         showError("Agent error: " + (eventData.message || "Unexpected server error."));
                         return;
                     } else if (eventData.type === "complete") {
                         receivedComplete = true;
-                        if (thinkingBubble) thinkingBubble.classList.add("hidden");
+                        stopPipelineUI();
                         displayCompletedMetadata(eventData.data);
                         if (assistantBody && typeof marked !== "undefined") {
                             assistantBody.innerHTML = marked.parse(accumulatedMarkdown);
@@ -595,11 +640,11 @@ async function executeStreamingSearch(payload) {
         }
 
         if (!receivedComplete && !accumulatedMarkdown) {
-            if (thinkingBubble) thinkingBubble.classList.add("hidden");
+            stopPipelineUI();
             showError("Connection ended before results arrived. Please try again.");
         }
     } catch (e) {
-        if (thinkingBubble) thinkingBubble.classList.add("hidden");
+        stopPipelineUI();
         showError("Chat error: " + e.message);
     }
 }

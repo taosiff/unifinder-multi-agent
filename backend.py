@@ -735,14 +735,27 @@ CAREER & ROI FORECAST:
 - Payback Period: {career.get('payback_period_years') or 2.0} Years ({career.get('roi_rating', 'Strong')} ROI)
 - 3-Year Cumulative Net Profit: ${(career.get('three_year_net_profit_usd') or 25000):,} USD
 
-FORMAT THE RESPONSE BEAUTIFULLY WITH:
+FORMAT THE RESPONSE CLEANLY & CONCISELY IN MARKDOWN WITH:
 # 🎓 Executive Admissions & Career Dossier
+> **Quick Summary**: 2-line personalized takeaway covering best-fit destination, cost range, and PR/job outlook.
+
 ## 1. Profile Assessment & Strategy Overview {f'(incorporating your uploaded document)' if crag_grounding else ''}
-## 2. Recommended Universities & Program Matches (Include Reach, Target, Safety classifications)
-## 3. Active Scholarship Opportunities & Funding Strategy
-## 4. Post-Study Work Visa (PSWV) & Permanent Residency (PR) Roadmap
-## 5. Job Market Outlook, Top Employers & ROI Forecast
-## 6. Actionable Next Steps & Timeline
+- Crisp bullet points of strengths, gaps, and target positioning.
+
+## 2. Top University Matches
+Include a clean Markdown comparison table (`| University | Country | Tuition/Yr | Min GPA / IELTS | Tier | PSWV |`) followed by brief 1–2 line highlights per school.
+
+## 3. Scholarships & Funding Strategy
+- Bulleted list of verified scholarships, funding amounts, and deadlines.
+
+## 4. Post-Study Work Visa (PSWV) & PR Roadmap
+- Concise step-by-step visa, salary threshold, and PR timeline.
+
+## 5. Job Market & Financial ROI
+- Starting salary, payback period, 3-year net profit, and top hiring employers.
+
+## 6. Actionable Next Steps
+- Numbered 4-step checklist with concrete timelines.
 """
 
     msgs = [
@@ -1226,11 +1239,11 @@ async def run_unifinder_agent_stream(
     dossier = accumulated.get("dossier_markdown", "")
     if dossier:
         save_chat_message(thread_id, "assistant", dossier)
-    chunk_size = 45
+    chunk_size = 24
     for i in range(0, len(dossier), chunk_size):
         chunk = dossier[i:i + chunk_size]
         yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
-        await asyncio.sleep(0.012)
+        await asyncio.sleep(0.01)
 
     final_res = {
         "thread_id": thread_id,

@@ -118,6 +118,11 @@ class ScrapeUniversityRequest(BaseModel):
 # Routes
 # ==========================================
 
+@app.get("/api/health")
+async def health_check():
+    return {"ok": True, "service": "unifinder-ai", "docs": "/docs"}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     has_gemini = bool(os.getenv("GOOGLE_API_KEY"))
