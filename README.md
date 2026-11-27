@@ -30,6 +30,20 @@ International students applying for **BSc, MSc, or PhD** degrees face fragmented
 
 ---
 
+## UI Screenshots
+
+<div align="center">
+
+### Desktop View
+![UniFinder AI Desktop Interface](docs/images/ui-desktop.png)
+
+### Mobile View
+![UniFinder AI Mobile Interface](docs/images/ui-mobile.png)
+
+</div>
+
+---
+
 ## Multi-Agent Architecture
 
 ```mermaid
