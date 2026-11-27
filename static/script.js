@@ -231,11 +231,21 @@ function appendChatMessage(role, content) {
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble-user";
         bubble.textContent = content;
+
+        const avatar = document.createElement("div");
+        avatar.className = "chat-avatar human";
+        avatar.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
         row.appendChild(bubble);
+        row.appendChild(avatar);
         feed.appendChild(row);
         feed.scrollTop = feed.scrollHeight;
         return bubble;
     } else {
+        const avatar = document.createElement("div");
+        avatar.className = "chat-avatar ai";
+        avatar.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/></svg>`;
+
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble-assistant";
         const body = document.createElement("div");
@@ -250,6 +260,7 @@ function appendChatMessage(role, content) {
             <button class="chat-mini-btn" onclick="printDossier()">Print / PDF</button>
         `;
         bubble.appendChild(actions);
+        row.appendChild(avatar);
         row.appendChild(bubble);
         feed.appendChild(row);
         feed.scrollTop = feed.scrollHeight;
